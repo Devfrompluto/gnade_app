@@ -6,7 +6,7 @@ import 'package:gnade_app/src/features/auth/presentation/screens/login_screen.da
 import 'package:gnade_app/src/features/auth/presentation/screens/signup_screen.dart';
 import 'package:gnade_app/src/features/auth/presentation/screens/forgot_password_screen.dart';
 
-import 'package:gnade_app/src/features/home/presentation/screens/home_page.dart';
+import 'package:gnade_app/src/features/home/presentation/screens/dashboard_screen.dart';
 import 'package:gnade_app/src/features/onboarding/presentation/screens/onboarding_page.dart';
 
 

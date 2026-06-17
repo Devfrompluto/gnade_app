@@ -1,54 +1,7 @@
 import 'package:gnade_app/src/imports/imports.dart';
 
-class OnboardingPage extends StatefulWidget {
+class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
-
-  @override
-  State<OnboardingPage> createState() => _OnboardingPageState();
-}
-
-class _OnboardingPageState extends State<OnboardingPage> {
-  late final PageController _pageController;
-  int _currentIndex = 0;
-
-  late final List<Map<String, dynamic>> _onboardingData;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-    _onboardingData = [
-      {
-        'title': 'onboarding.onboarding_title_1'.tr(),
-        'subtitle':
-            'onboarding.onboarding_subtitle_1'.tr(),
-        'pageWidget': const FlutterLogo(size: 200),
-      },
-      {
-        'title': 'onboarding.onboarding_title_2'.tr(),
-        'subtitle':
-            'onboarding.onboarding_subtitle_2'.tr(),
-        'pageWidget': const FlutterLogo(size: 200),
-      },
-      {
-        'title': 'onboarding.onboarding_title_3'.tr(),
-        'subtitle':
-            'onboarding.onboarding_subtitle_3'.tr(),
-        'pageWidget': const FlutterLogo(size: 200),
-      },
-    ];
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _onGetStarted() {
-    // Navigate back or to home. For template purpose:
-    context.go(AppRoutes.login);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,139 +9,101 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    return _OnboardingView(
-      theme: theme,
-      colorScheme: colorScheme,
-      textTheme: textTheme,
-      pageController: _pageController,
-      currentIndex: _currentIndex,
-      onboardingData: _onboardingData,
-      onPageChanged: (index) => setState(() => _currentIndex = index),
-      onGetStarted: _onGetStarted,
-    );
-  }
-}
-
-class _OnboardingView extends StatelessWidget {
-  const _OnboardingView({
-    required this.theme,
-    required this.colorScheme,
-    required this.textTheme,
-    required this.pageController,
-    required this.currentIndex,
-    required this.onboardingData,
-    required this.onPageChanged,
-    required this.onGetStarted,
-  });
-
-  final ThemeData theme;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-  final PageController pageController;
-  final int currentIndex;
-  final List<Map<String, dynamic>> onboardingData;
-  final ValueChanged<int> onPageChanged;
-  final VoidCallback onGetStarted;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Top branding
-            Padding(
-              padding: EdgeInsets.only(
-                top: AppSpacing.lg.h,
-                bottom: AppSpacing.md.h,
-              ),
-              child: Text(
-                'FlutterInit.',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: colorScheme.onSurface,
-                  fontSize: 22.sp,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+              
+              // Centered App Icon Badge
+              Center(
+                child: Container(
+                  width: 110.w,
+                  height: 110.w,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: AppIcon(
+                      icon: HugeIcons.strokeRoundedShoppingBag02,
+                      size: 44.sp,
+                      color: colorScheme.primary,
+                    ),
+                  ),
                 ),
               ),
-            ),
-
-            // PageView
-            Expanded(
-              child: PageView.builder(
-                controller: pageController,
-                itemCount: onboardingData.length,
-                onPageChanged: onPageChanged,
-                itemBuilder: (context, index) {
-                  return Column(
-                    children: [
-                      // Dynamic Illustration Section
-                      Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: AppSpacing.lg.w,
-                            ),
-                            child: onboardingData[index]['pageWidget'] as Widget,
+              
+              SizedBox(height: AppSpacing.xxl.h),
+              
+              // App Title
+              Text(
+                'onboarding.title'.tr(),
+                style: textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.primary,
+                  fontSize: 28.sp,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              
+              SizedBox(height: AppSpacing.sm.h),
+              
+              // Subtitle
+              Text(
+                'onboarding.subtitle'.tr(),
+                textAlign: TextAlign.center,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                  fontSize: 15.sp,
+                ),
+              ),
+              
+              const Spacer(flex: 3),
+              
+              // Get Started Button
+              AppButton(
+                label: 'shared.get_started'.tr(),
+                onPressed: () => context.go(AppRoutes.login),
+                variant: ButtonVariant.primary,
+                height: ButtonSize.large,
+                isFullWidth: true,
+              ),
+              
+              SizedBox(height: AppSpacing.lg.h),
+              
+              // Already have an account? Sign In
+              GestureDetector(
+                onTap: () => context.go(AppRoutes.login),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.xs.h),
+                  child: RichText(
+                    text: TextSpan(
+                      text: 'auth.already_have_account'.tr(),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 14.sp,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'auth.sign_in'.tr(),
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                      
-                      // Text Section
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xl.w,
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              onboardingData[index]['title'] as String,
-                              textAlign: TextAlign.center,
-                              style: textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.onSurface,
-                                height: 1.2,
-                                fontSize: 24.sp,
-                              ),
-                            ),
-                            SizedBox(height: AppSpacing.md.h),
-                            Text(
-                              onboardingData[index]['subtitle'] as String,
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                height: 1.5,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 40.h),
-                    ],
-                  );
-                },
-              ),
-            ),
-
-            // Bottom Section: Dots and Button
-            Padding(
-              padding: EdgeInsets.all(AppSpacing.xl.w),
-              child: Column(
-                children: [
-                   SizedBox(height: AppSpacing.xl),
-                  // Get Started Button
-                  AppButton(
-                    label: 'shared.get_started'.tr(),
-                    onPressed: onGetStarted,
-                    variant: ButtonVariant.primary,
-                    width: ButtonSize.medium,
+                      ],
+                    ),
                   ),
-                  SizedBox(height: AppSpacing.md),
-                ],
+                ),
               ),
-            ),
-          ],
+              
+              SizedBox(height: AppSpacing.lg.h),
+            ],
+          ),
         ),
       ),
     );

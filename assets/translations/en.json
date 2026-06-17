@@ -3,12 +3,10 @@
     "get_started": "Get Started"
   },
   "onboarding": {
-    "onboarding_title_1": "Your Journey,\nPerfectly Planned",
-    "onboarding_subtitle_1": "Effortlessly create and organize your\ndream trips. Start exploring now!",
-    "onboarding_title_2": "Discover\nFriends Nearby",
-    "onboarding_subtitle_2": "See where your friends are traveling and\nexplore the world together.",
-    "onboarding_title_3": "Stay Updated\nwith Top Places",
-    "onboarding_subtitle_3": "Find trending destinations and must-see attractions,\nall tailored to enhance your travel plans."
+    "title": "Kinetic Retail",
+    "subtitle": "Run your business, simply.",
+    "already_have_account": "Already have an account? ",
+    "sign_in": "Sign In"
   },
   "home": {
     "home_title": "Home",
@@ -16,17 +14,16 @@
     "home_subtitle": "You have successfully completed the onboarding process."
   },
   "auth": {
-    "log_in": "Log in",
-    "log_in_subtitle": "Enter your email and password",
-    "email": "Email",
-    "email_required": "Email is required",
-    "email_invalid": "Enter a valid email",
+    "welcome_back": "Welcome back",
+    "sign_in_to_continue": "Sign in to continue",
+    "email_or_employee_id": "Email or Employee ID",
     "password": "Password",
     "password_required": "Password is required",
     "password_too_short": "Password must be at least 6 characters",
     "remember_me": "Remember me",
-    "forgot_password": "Forgot Password",
+    "forgot_password": "Forgot Password?",
     "login_button": "Login",
+    "quick_pin_login": "Quick PIN Login",
     "dont_have_account": "Don't have an account? ",
     "sign_up": "Sign Up",
     "create_account": "Create Account",

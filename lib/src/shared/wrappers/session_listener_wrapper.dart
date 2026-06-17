@@ -13,10 +13,13 @@ class SessionListenerWrapper extends ConsumerWidget {
     ref.listen<SessionState>(sessionProvider, (prev, next) {
       if (next.status != SessionStatus.unknown) {
         FlutterNativeSplash.remove();
-        if (next.status == SessionStatus.authenticated) {
-          context.go(AppRoutes.home);
-        } else if (next.status == SessionStatus.unauthenticated) {
-          context.go(AppRoutes.onboarding);
+        final navContext = rootContext;
+        if (navContext != null && navContext.mounted) {
+          if (next.status == SessionStatus.authenticated) {
+            navContext.go(AppRoutes.home);
+          } else if (next.status == SessionStatus.unauthenticated) {
+            navContext.go(AppRoutes.onboarding);
+          }
         }
       }
     });

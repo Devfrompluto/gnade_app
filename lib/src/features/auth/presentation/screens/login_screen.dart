@@ -1,6 +1,5 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-
 import 'package:gnade_app/src/features/auth/presentation/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -26,14 +25,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authControllerProvider);
-
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
 
     Future<void> handleLogin() async {
       if (!(_formKey.currentState?.validate() ?? false)) return;
       
-
       ref.read(authControllerProvider.notifier).login(
         context: context, 
         email: _emailController.text, 
@@ -41,232 +38,207 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     }
 
-    return _LoginView(
-      formKey: _formKey,
-      emailController: _emailController,
-      passwordController: _passwordController,
-      obscurePassword: _obscurePassword,
-      isLoading: isLoading,
-      onToggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
-      onLogin: handleLogin,
-      cs: cs,
-      tt: tt,
-    );
-  }
-}
-
-class _LoginView extends StatelessWidget {
-  const _LoginView({
-    required this.formKey,
-    required this.emailController,
-    required this.passwordController,
-    required this.obscurePassword,
-    required this.isLoading,
-    required this.onToggleObscure,
-    required this.onLogin,
-    required this.cs,
-    required this.tt,
-  });
-
-  final GlobalKey<FormState> formKey;
-  final TextEditingController emailController;
-  final TextEditingController passwordController;
-  final bool obscurePassword;
-  final bool isLoading;
-  final VoidCallback onToggleObscure;
-  final VoidCallback onLogin;
-  final ColorScheme cs;
-  final TextTheme tt;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: AppSpacing.xl.h),
-                Text(
-                  'auth.log_in'.tr(),
-                  style: tt.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: AppSpacing.sm.h),
-                Text(
-                  'auth.log_in_subtitle'.tr(),
-                  textAlign: TextAlign.center,
-                  style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                ),
-                SizedBox(height: AppSpacing.xxxl.h),
-                // Form Card
-                Form(
-                  key: formKey,
-                  child: Column(
-                    children: [
-                      AppTextField(
-                        controller: emailController,
-                        enabled: !isLoading,
-                        label: 'auth.email'.tr(),
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        validator: (v) {
-                          if (AppUtils.isBlank(v)) {
-                            return 'auth.email_required'.tr();
-                          }
-                          if (!AppUtils.isValidEmail(v!)) {
-                            return 'auth.email_invalid'.tr();
-                          }
-                          return null;
-                        },
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: AppSpacing.xl.h),
+                  
+                  // Storefront Rounded Square Badge
+                  Center(
+                    child: Container(
+                      width: 72.w,
+                      height: 72.w,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        borderRadius: BorderRadius.circular(16.r),
                       ),
-                      SizedBox(height: AppSpacing.md.h),
-                      AppTextField(
-                        controller: passwordController,
-                        enabled: !isLoading,
-                        label: 'auth.password'.tr(),
-                        obscureText: obscurePassword,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: onToggleObscure,
+                      child: Center(
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          size: 32.sp,
+                          color: Colors.white,
                         ),
-                         validator: (v) {
-                          if (AppUtils.isBlank(v)) {
-                            return 'auth.password_required'.tr();
-                          }
-                          if (v!.length < 6) {
-                            return 'auth.password_too_short'.tr();
-                          }
-                          return null;
-                        },
                       ),
-                      SizedBox(height: AppSpacing.sm.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            spacing: 5.w,
-                            children: [
-                              SizedBox(
-                                width: 20.w,
-                                height: 20.h,
-                                child: Checkbox(
-                                  value: true,
-                                  onChanged: (value) {},
-                                ),
-                              ),
-                              Text(
-                                'auth.remember_me'.tr(),
-                                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                              ),
-                            ],
-                          ),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                            ),
-                            onPressed: () {
-                              context.push(AppRoutes.forgotPassword);
-                            },
-                            child: Text(
-                              'auth.forgot_password'.tr(),
-                              style: tt.bodySmall?.copyWith(
-                                color: cs.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: AppSpacing.xl.h),
+                  
+                  // Welcome Back Title
+                  Text(
+                    'auth.welcome_back'.tr(),
+                    style: tt.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: cs.onSurface,
+                      fontSize: 26.sp,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  
+                  SizedBox(height: AppSpacing.xs.h),
+                  
+                  // Subtitle
+                  Text(
+                    'auth.sign_in_to_continue'.tr(),
+                    textAlign: TextAlign.center,
+                    style: tt.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.8),
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  
+                  SizedBox(height: AppSpacing.xxl.h),
+                  
+                  // Email Input Field
+                  AppTextField(
+                    controller: _emailController,
+                    enabled: !isLoading,
+                    label: 'auth.email_or_employee_id'.tr(),
+                    prefixIcon: Padding(
+                      padding: EdgeInsets.only(left: 4.w),
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
                       ),
-                      SizedBox(height: AppSpacing.lg.h),
-                      AppButton(
-                        label: 'Sign In',
-                        isLoading: isLoading,
-                        onPressed: isLoading ? null : onLogin,
-                        width: ButtonSize.large,
-                        isFullWidth: false,
+                    ),
+                    validator: (v) {
+                      if (AppUtils.isBlank(v)) {
+                        return 'auth.email_required'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                  
+                  SizedBox(height: AppSpacing.md.h),
+                  
+                  // Password Input Field
+                  AppTextField(
+                    controller: _passwordController,
+                    enabled: !isLoading,
+                    label: 'auth.password'.tr(),
+                    obscureText: _obscurePassword,
+                    prefixIcon: Padding(
+                      padding: EdgeInsets.only(left: 4.w),
+                      child: Icon(
+                        Icons.lock_outline_rounded,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword 
+                            ? Icons.visibility_outlined 
+                            : Icons.visibility_off_outlined,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                    validator: (v) {
+                      if (AppUtils.isBlank(v)) {
+                        return 'auth.password_required'.tr();
+                      }
+                      if (v!.length < 6) {
+                        return 'auth.password_too_short'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                  
+                  SizedBox(height: AppSpacing.sm.h),
+                  
+                  // Forgot Password Link (aligned right)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () => context.push(AppRoutes.forgotPassword),
+                      child: Text(
+                        'auth.forgot_password'.tr(),
+                        style: TextStyle(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  SizedBox(height: AppSpacing.lg.h),
+                  
+                  // Login Button
+                  AppButton(
+                    label: 'auth.login_button'.tr(),
+                    isLoading: isLoading,
+                    onPressed: isLoading ? null : handleLogin,
+                    height: ButtonSize.medium,
+                    isFullWidth: true,
+                  ),
+                  
+                  SizedBox(height: AppSpacing.xl.h),
+                  
+                  // Custom Or Divider
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: cs.outlineVariant.withValues(alpha: 0.5),
+                          thickness: 1,
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Text(
+                          'or',
+                          style: tt.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: cs.outlineVariant.withValues(alpha: 0.5),
+                          thickness: 1,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                SizedBox(height: AppSpacing.xxxl.h),
-                Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 20.w,
-                      children: [
-                        SizedBox(
-                          width: 50.w,
-                          height: 50.w,
-                          child: TextButton(
-                            onPressed: () {},
-                            style: TextButton.styleFrom(
-                              backgroundColor: const Color(0xFFEA4335).withValues(alpha: 0.8),
-                              padding: EdgeInsets.symmetric(horizontal: 10.w),
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: AppBorders.button,
-                              ),
-                            ),
-                            child: SvgPicture.asset(AppAssets.googleIcon),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 50.w,
-                          height: 50.w,
-                          child: TextButton(
-                            onPressed: () {},
-                            style: TextButton.styleFrom(
-                              backgroundColor: const Color(0xFF4285F4),
-                              padding: EdgeInsets.symmetric(horizontal: 10.w),
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: AppBorders.button,
-                              ),
-                            ),
-                            child: SvgPicture.asset(AppAssets.facebookIcon),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 50.w,
-                          height: 50.w,
-                          child: TextButton(
-                            onPressed: () {},
-                            style: TextButton.styleFrom(
-                              backgroundColor: const Color(0xFF000000),
-                              padding: EdgeInsets.symmetric(horizontal: 10.w),
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: AppBorders.button,
-                              ),
-                            ),
-                            child: SvgPicture.asset(AppAssets.appleIcon),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: AppSpacing.xl.h),
-                  ],
-                ),
-                InkWell(
-                  onTap: () {
-                    context.push(AppRoutes.signup);
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      text: 'auth.dont_have_account'.tr(),
-                      style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                      children: [
-                        TextSpan(
-                          text: 'auth.sign_up'.tr(),
-                          style: TextStyle(
-                            color: cs.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                  
+                  SizedBox(height: AppSpacing.xl.h),
+                  
+                  // Quick PIN Login Button
+                  AppButton(
+                    label: 'auth.quick_pin_login'.tr(),
+                    onPressed: isLoading ? null : () {
+                      showToast(context, message: 'PIN Login coming soon!', status: 'info');
+                    },
+                    variant: ButtonVariant.outline,
+                    height: ButtonSize.medium,
+                    isFullWidth: true,
+                    prefixIcon: Padding(
+                      padding: EdgeInsets.only(right: 4.w),
+                      child: Icon(
+                        Icons.dialpad_rounded,
+                        size: 20.sp,
+                        color: cs.primary,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  
+                  SizedBox(height: AppSpacing.xl.h),
+                ],
+              ),
             ),
           ),
         ),
