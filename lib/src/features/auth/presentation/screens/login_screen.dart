@@ -111,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     validator: (v) {
                       if (AppUtils.isBlank(v)) {
-                        return 'auth.email_required'.tr();
+                        return 'auth.email_or_employee_id_required'.tr();
                       }
                       return null;
                     },

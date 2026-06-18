@@ -1,59 +1,261 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import '../widgets/home_menu_section.dart';
+import '../widgets/sold_products_section.dart';
 
-import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
-
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  bool _showSalesBalance = true;
+  bool _showExpensesBalance = true;
+  int _selectedTabIndex = 0; // 0: Home menu, 1: Sold products
+
+  @override
+  Widget build(BuildContext context) {
     final theme = context.theme;
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final session = ref.watch(sessionProvider);
-    final user = session.user;
-
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppTopBar(
-        title: 'home.home_title'.tr(),
-      ),
+      backgroundColor: const Color(0xFFF8FAFC), // Very light gray background
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.xl.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppIcon(
-                icon: HugeIcons.strokeRoundedHome01,
-                size: 60.sp,
-                color: colorScheme.primary,
-              ),
-              SizedBox(height: AppSpacing.lg.h),
-              Text(
-                user?.name ?? user?.email ?? ('home.welcome_home'.tr()),
-                textAlign: TextAlign.center,
-                style: textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: colorScheme.onSurface,
-                  fontSize: 28.sp,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.pagePadding.w,
+                vertical: AppSpacing.md.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. HEADER SECTION
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 30.w,
+                          height: 30.w,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF1E3A8A), // Dark blue
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              'G',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18.sp,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+
+                        // Business Switch Dropdown
+                        Row(
+                          children: [
+                            Text(
+                              'Gnade Multiconcept...',
+                              style: textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: colorScheme.onSurface,
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: colorScheme.onSurface,
+                              size: 24.sp,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    // Notification Bell Badge
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 30.w,
+                          height: 30.w,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: colorScheme.outlineVariant
+                                  .withValues(alpha: 0.5),
+                              width: 1,
+                            ),
+                          ),
+                          child: AppIcon(
+                            icon: HugeIcons.strokeRoundedNotification01,
+                            color: colorScheme.onSurface.withValues(alpha: 0.8),
+                            size: 16.sp,
+                          ),
+                        ),
+                        Positioned(
+                          top: -2.h,
+                          right: -2.w,
+                          child: Container(
+                            padding: EdgeInsets.all(4.w),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE11D48), // Vibrant red badge
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: BoxConstraints(
+                              minWidth: 16.w,
+                              minHeight: 16.w,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '75',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(height: AppSpacing.md.h),
-              Text(
-                user != null && user.name != null
-                    ? user.email
-                    : ('home.home_subtitle'.tr()),
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 14.sp,
+
+                SizedBox(height: AppSpacing.lg.h),
+
+                // 2. METRICS CARDS SECTION (Sales & Expenses)
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: 10.w,
+                    children: [
+                      AppMetricCard(
+                        title: 'Today Sales',
+                        value: '₦ 145,200',
+                        isGreen: true,
+                        showValue: _showSalesBalance,
+                        onToggleVisibility: () {
+                          setState(() {
+                            _showSalesBalance = !_showSalesBalance;
+                          });
+                        },
+                      ),
+                      AppMetricCard(
+                        title: 'Today Expenses',
+                        value: '₦ 12,500',
+                        isGreen: false,
+                        showValue: _showExpensesBalance,
+                        isIncreasing: false,
+                        onToggleVisibility: () {
+                          setState(() {
+                            _showExpensesBalance = !_showExpensesBalance;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+
+                SizedBox(height: AppSpacing.md.h),
+
+                // 3. SEGMENTED TAB SELECTOR (Home menu / Sold products)
+                Container(
+                  height: 40.h,
+                  padding: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    color: const Color(
+                        0xFFE2E8F0), // Light slate container background
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Row(
+                    children: [
+                      // Home menu tab
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedTabIndex = 0),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: _selectedTabIndex == 0
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Home menu',
+                                style: TextStyle(
+                                  color: _selectedTabIndex == 0
+                                      ? Colors.white
+                                      : const Color(0xFF475569),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Sold products tab
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedTabIndex = 1),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: _selectedTabIndex == 1
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: _selectedTabIndex == 1
+                                  ? Border.all(
+                                      color: colorScheme.primary
+                                          .withValues(alpha: 0.1),
+                                      width: 1,
+                                    )
+                                  : null,
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Sold products',
+                                style: TextStyle(
+                                  color: _selectedTabIndex == 1
+                                      ? colorScheme.primary
+                                      : const Color(0xFF475569),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: AppSpacing.md.h),
+
+                // 4. TAB CONTENTS
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: _selectedTabIndex == 0
+                      ? const HomeMenuSection()
+                      : const SoldProductsSection(),
+                ),
+              ],
+            ),
           ),
         ),
       ),

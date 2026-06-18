@@ -16,7 +16,7 @@ class SessionListenerWrapper extends ConsumerWidget {
         final navContext = rootContext;
         if (navContext != null && navContext.mounted) {
           if (next.status == SessionStatus.authenticated) {
-            navContext.go(AppRoutes.home);
+            navContext.go(AppRoutes.dashboard);
           } else if (next.status == SessionStatus.unauthenticated) {
             navContext.go(AppRoutes.onboarding);
           }

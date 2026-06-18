@@ -194,7 +194,7 @@ class _SignupView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSpacing.lg.h),
                       AppButton(
-                        label: 'Sign Up',
+                        label: 'auth.sign_up'.tr(),
                         isLoading: isLoading,
                         onPressed: isLoading ? null : onSignup,
                         width: ButtonSize.large,
