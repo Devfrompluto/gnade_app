@@ -8,6 +8,7 @@ class ProductItemMock {
   final String initials;
   final Color initialsColor;
   final int quantityInStock;
+  final double price;
 
   ProductItemMock({
     required this.id,
@@ -16,6 +17,7 @@ class ProductItemMock {
     required this.initials,
     required this.initialsColor,
     required this.quantityInStock,
+    required this.price,
   });
 }
 
@@ -84,8 +86,18 @@ class ProductItemTile extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4.h),
+                Text(
+                  '₦ ${product.price.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    color: const Color(0xFF475569),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11.sp,
+                  ),
+                ),
+                SizedBox(height: 4.h),
                 if (isFinished)
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         width: 6.w,

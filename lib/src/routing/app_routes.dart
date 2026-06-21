@@ -22,4 +22,8 @@ abstract final class AppRoutes {
   // Sales Inner Flow
   static const String selectItem = '/sales/select-item';
   static const String newSale = '/sales/new';
+  static const String saleSuccess = '/sales/success';
+  static const String selectCustomer = '/sales/select-customer';
+  static const String addCustomer = '/sales/add-customer';
+  static const String printReceipt = '/print-receipt';
 }

@@ -6,7 +6,7 @@ class ProductsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppTopBar(title: 'Products'),
+      appBar: const AppMainHeader(),
       body: Center(
         child: Text(
           'Products inventory screen coming soon!',

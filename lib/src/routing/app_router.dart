@@ -1,5 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:gnade_app/src/imports/core_imports.dart';
+import 'package:gnade_app/src/features/sales/presentation/widgets/product_item_tile.dart';
+import 'package:gnade_app/src/features/sales/presentation/screens/sale_success_screen.dart';
+import 'package:gnade_app/src/features/customers/presentation/screens/select_customer_screen.dart';
+import 'package:gnade_app/src/features/customers/presentation/screens/add_customer_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -24,6 +28,15 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.forgotPassword,
       name: 'forgotPassword',
       builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.printReceipt,
+      name: 'printReceipt',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) {
+        final receiptData = state.extra as ReceiptData?;
+        return ReceiptPreviewScreen(receiptData: receiptData);
+      },
     ),
     
     // Stateful Bottom Navigation Shell
@@ -53,6 +66,49 @@ final GoRouter appRouter = GoRouter(
                   name: 'selectItem',
                   parentNavigatorKey: rootNavigatorKey,
                   builder: (context, state) => const SelectItemScreen(),
+                ),
+                GoRoute(
+                  path: 'new',
+                  name: 'newSale',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final extra = state.extra as Map<String, dynamic>?;
+                    final selectedItems = extra?['products'] as List<ProductItemMock>?;
+                    final quantities = extra?['quantities'] as Map<String, int>?;
+                    return NewSaleScreen(
+                      selectedItems: selectedItems ?? const [],
+                      initialQuantities: quantities ?? const {},
+                    );
+                  },
+                ),
+                GoRoute(
+                  path: 'success',
+                  name: 'saleSuccess',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final extra = state.extra as Map<String, dynamic>;
+                    return SaleSuccessScreen(
+                      invoiceNo: extra['invoiceNo'] as String,
+                      amountPaid: extra['amountPaid'] as double,
+                      paymentMethod: extra['paymentMethod'] as String,
+                      paymentStatus: extra['paymentStatus'] as String? ?? 'Paid',
+                      total: extra['total'] as double? ?? extra['amountPaid'] as double,
+                      dateTime: extra['dateTime'] as DateTime,
+                      receiptData: extra['receiptData'] as ReceiptData?,
+                    );
+                  },
+                ),
+                GoRoute(
+                  path: 'select-customer',
+                  name: 'selectCustomer',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const SelectCustomerScreen(),
+                ),
+                GoRoute(
+                  path: 'add-customer',
+                  name: 'addCustomer',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const AddCustomerScreen(),
                 ),
               ],
             ),

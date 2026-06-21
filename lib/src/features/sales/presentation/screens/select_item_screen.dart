@@ -19,19 +19,21 @@ class _SelectItemScreenState extends State<SelectItemScreen> {
   final List<ProductItemMock> _products = [
     ProductItemMock(
       id: 'p1',
-      name: 'Star radler bottle',
-      category: 'Bottles',
-      initials: 'S',
-      initialsColor: const Color(0xFF475569), // Slate
-      quantityInStock: 0,
+      name: 'Premium Rice 50kg',
+      category: 'PET',
+      initials: 'P',
+      initialsColor: const Color(0xFF0F2C59), // Deep Blue
+      quantityInStock: 10,
+      price: 45000,
     ),
     ProductItemMock(
       id: 'p2',
-      name: 'Tiger bottle',
-      category: 'Bottles',
-      initials: 'T',
+      name: 'Vegetable Oil 5L',
+      category: 'PET',
+      initials: 'V',
       initialsColor: const Color(0xFF0D9488), // Teal
-      quantityInStock: 0,
+      quantityInStock: 5,
+      price: 8500,
     ),
     ProductItemMock(
       id: 'p3',
@@ -40,22 +42,25 @@ class _SelectItemScreenState extends State<SelectItemScreen> {
       initials: 'B',
       initialsColor: const Color(0xFF7C3AED), // Purple
       quantityInStock: 10,
+      price: 1500,
     ),
     ProductItemMock(
       id: 'p4',
-      name: 'Coca Cola Can',
-      category: 'Cans',
-      initials: 'C',
-      initialsColor: const Color(0xFFDC2626), // Red
-      quantityInStock: 25,
+      name: 'Star radler bottle',
+      category: 'Bottles',
+      initials: 'S',
+      initialsColor: const Color(0xFF475569), // Slate
+      quantityInStock: 0,
+      price: 2000,
     ),
     ProductItemMock(
       id: 'p5',
-      name: 'Heineken Can',
-      category: 'Cans',
-      initials: 'H',
-      initialsColor: const Color(0xFF16A34A), // Green
-      quantityInStock: 15,
+      name: 'Tiger bottle',
+      category: 'Bottles',
+      initials: 'T',
+      initialsColor: const Color(0xFF0D9488), // Teal
+      quantityInStock: 0,
+      price: 2200,
     ),
   ];
 
@@ -107,9 +112,12 @@ class _SelectItemScreenState extends State<SelectItemScreen> {
           ),
         ),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: SafeArea(
+          bottom: false,
+          child: Column(
           children: [
             // ─── Search Bar Row ──────────────────────────────────────────────
             Padding(
@@ -296,7 +304,20 @@ class _SelectItemScreenState extends State<SelectItemScreen> {
                     ),
                     onPressed: totalItemsSelected > 0
                         ? () {
-                            // Proceed logic
+                            final List<ProductItemMock> selectedProducts = [];
+                            _selectedQuantities.forEach((id, qty) {
+                              if (qty > 0) {
+                                final product = _products.firstWhere((p) => p.id == id);
+                                selectedProducts.add(product);
+                              }
+                            });
+                            context.push(
+                              AppRoutes.newSale,
+                              extra: {
+                                'products': selectedProducts,
+                                'quantities': _selectedQuantities,
+                              },
+                            );
                           }
                         : null,
                     child: Text(
@@ -314,6 +335,7 @@ class _SelectItemScreenState extends State<SelectItemScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

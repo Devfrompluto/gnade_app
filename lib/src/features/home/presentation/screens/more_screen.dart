@@ -7,7 +7,7 @@ class MoreScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: const AppTopBar(title: 'More Menu'),
+      appBar: const AppMainHeader(),
       body: Padding(
         padding: EdgeInsets.all(AppSpacing.xl.w),
         child: Column(

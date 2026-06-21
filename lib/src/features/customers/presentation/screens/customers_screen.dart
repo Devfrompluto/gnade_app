@@ -6,7 +6,7 @@ class CustomersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppTopBar(title: 'Customers'),
+      appBar: const AppMainHeader(),
       body: Center(
         child: Text(
           'Customers debt management screen coming soon!',

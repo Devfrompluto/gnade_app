@@ -37,104 +37,11 @@ class _SalesScreenState extends State<SalesScreen> with SingleTickerProviderStat
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      appBar: const AppMainHeader(),
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // ─── Header Row ──────────────────────────────────────────────────
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.pagePadding.w,
-                vertical: AppSpacing.sm.h,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      // Avatar
-                      Container(
-                        width: 30.w,
-                        height: 30.w,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF0F2C59), // Deep Blue/Navy
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            'B',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16.sp,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      Text(
-                        'Shop Manager',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                          fontSize: 15.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Notification Bell Badge
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 30.w,
-                        height: 30.w,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                            width: 1,
-                          ),
-                        ),
-                        child: AppIcon(
-                          icon: HugeIcons.strokeRoundedNotification01,
-                          color: colorScheme.onSurface.withValues(alpha: 0.8),
-                          size: 16.sp,
-                        ),
-                      ),
-                      Positioned(
-                        top: -2.h,
-                        right: -2.w,
-                        child: Container(
-                          padding: EdgeInsets.all(4.w),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFE11D48), // Vibrant red
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: BoxConstraints(
-                            minWidth: 16.w,
-                            minHeight: 16.w,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '75',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
             // ─── Main Content (Scrollable) ──────────────────────────────────
             Expanded(
               child: Stack(
