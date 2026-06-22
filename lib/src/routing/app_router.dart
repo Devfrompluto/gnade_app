@@ -168,6 +168,17 @@ final GoRouter appRouter = GoRouter(
               path: AppRoutes.customers,
               name: 'customers',
               builder: (context, state) => const CustomersScreen(),
+              routes: [
+                GoRoute(
+                  path: 'details/:id',
+                  name: 'customerDetails',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final id = state.pathParameters['id'] ?? '';
+                    return CustomerDetailsScreen(id: id);
+                  },
+                ),
+              ],
             ),
           ],
         ),

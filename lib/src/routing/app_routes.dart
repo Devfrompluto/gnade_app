@@ -30,6 +30,7 @@ abstract final class AppRoutes {
   static const String productDetails = '/products/details';
   static const String supplierDetails = '/products/supplier';
   static const String purchaseDetails = '/products/purchase';
+  static const String customerDetails = '/customers/details';
 }
 
 

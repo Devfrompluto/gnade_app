@@ -1,5 +1,21 @@
 import 'package:flutter/material.dart';
 
+class CustomerOrderMock {
+  final String id;
+  final String status; // 'PAID' or 'UNPAID'
+  final String date;
+  final int itemsCount;
+  final String amount;
+
+  const CustomerOrderMock({
+    required this.id,
+    required this.status,
+    required this.date,
+    required this.itemsCount,
+    required this.amount,
+  });
+}
+
 class CustomerMock {
   final String id;
   final String name;
@@ -8,6 +24,10 @@ class CustomerMock {
   final String? address;
   final String? notes;
   final Color initialsColor;
+  final int purchasesCount;
+  final double balance; // Negative for Owed, Positive for Deposit, 0 for None
+  final String lastSeen;
+  final List<CustomerOrderMock> orders;
 
   const CustomerMock({
     required this.id,
@@ -17,6 +37,10 @@ class CustomerMock {
     this.address,
     this.notes,
     required this.initialsColor,
+    this.purchasesCount = 0,
+    this.balance = 0,
+    this.lastSeen = 'Never',
+    this.orders = const [],
   });
 
   // Helper to extract the first letter of name

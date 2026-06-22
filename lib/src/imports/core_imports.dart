@@ -30,6 +30,7 @@ export '../features/inventory/presentation/screens/product_details_screen.dart';
 export '../features/inventory/presentation/screens/supplier_details_screen.dart';
 export '../features/inventory/presentation/screens/purchase_details_screen.dart';
 export '../features/customers/presentation/screens/customers_screen.dart';
+export '../features/customers/presentation/screens/customer_details_screen.dart';
 export '../features/printing/domain/entities/receipt_data.dart';
 export '../features/printing/presentation/screens/receipt_preview_screen.dart';
 export '../features/printing/presentation/widgets/widgets.dart';
