@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/features/sales/presentation/widgets/product_item_tile.dart';
 import 'package:gnade_app/src/features/sales/presentation/screens/sale_success_screen.dart';
+import 'package:gnade_app/src/features/sales/presentation/screens/sale_details_screen.dart';
 import 'package:gnade_app/src/features/customers/presentation/screens/select_customer_screen.dart';
 import 'package:gnade_app/src/features/customers/presentation/screens/add_customer_screen.dart';
 
@@ -99,6 +100,15 @@ final GoRouter appRouter = GoRouter(
                   },
                 ),
                 GoRoute(
+                  path: 'details/:id',
+                  name: 'saleDetails',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final id = state.pathParameters['id'] ?? '';
+                    return SaleDetailsScreen(id: id);
+                  },
+                ),
+                GoRoute(
                   path: 'select-customer',
                   name: 'selectCustomer',
                   parentNavigatorKey: rootNavigatorKey,
@@ -120,6 +130,35 @@ final GoRouter appRouter = GoRouter(
               path: AppRoutes.products,
               name: 'products',
               builder: (context, state) => const ProductsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'details/:id',
+                  name: 'productDetails',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final id = state.pathParameters['id'] ?? '';
+                    return ProductDetailsScreen(id: id);
+                  },
+                ),
+                GoRoute(
+                  path: 'supplier/:id',
+                  name: 'supplierDetails',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final id = state.pathParameters['id'] ?? '';
+                    return SupplierDetailsScreen(id: id);
+                  },
+                ),
+                GoRoute(
+                  path: 'purchase/:id',
+                  name: 'purchaseDetails',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final id = state.pathParameters['id'] ?? '';
+                    return PurchaseDetailsScreen(id: id);
+                  },
+                ),
+              ],
             ),
           ],
         ),
