@@ -31,6 +31,12 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(
+      path: AppRoutes.notifications,
+      name: 'notifications',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
       path: AppRoutes.printReceipt,
       name: 'printReceipt',
       parentNavigatorKey: rootNavigatorKey,
@@ -188,6 +194,18 @@ final GoRouter appRouter = GoRouter(
               path: AppRoutes.more,
               name: 'more',
               builder: (context, state) => const MoreScreen(),
+              routes: [
+                GoRoute(
+                  path: 'app-settings',
+                  name: 'appSettings',
+                  builder: (context, state) => const AppSettingsScreen(),
+                ),
+                GoRoute(
+                  path: 'business-settings',
+                  name: 'businessSettings',
+                  builder: (context, state) => const BusinessSettingsScreen(),
+                ),
+              ],
             ),
           ],
         ),

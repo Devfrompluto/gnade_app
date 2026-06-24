@@ -18,6 +18,9 @@ abstract final class AppRoutes {
   static const String products = '/products';
   static const String customers = '/customers';
   static const String more = '/more';
+  static const String appSettings = '/more/app-settings';
+  static const String businessSettings = '/more/business-settings';
+  static const String notifications = '/notifications';
 
   // Sales Inner Flow
   static const String selectItem = '/sales/select-item';

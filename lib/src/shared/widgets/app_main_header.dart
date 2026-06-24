@@ -63,52 +63,55 @@ class AppMainHeader extends StatelessWidget implements PreferredSizeWidget {
           ),
 
           // Notification Bell Badge
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 30.w,
-                height: 30.w,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-                child: AppIcon(
-                  icon: HugeIcons.strokeRoundedNotification01,
-                  color: colorScheme.onSurface.withValues(alpha: 0.8),
-                  size: 16.sp,
-                ),
-              ),
-              Positioned(
-                top: -2.h,
-                right: -2.w,
-                child: Container(
-                  padding: EdgeInsets.all(4.w),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE11D48), // Vibrant red badge
+          GestureDetector(
+            onTap: () => context.push(AppRoutes.notifications),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 30.w,
+                  height: 30.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
                   ),
-                  constraints: BoxConstraints(
-                    minWidth: 16.w,
-                    minHeight: 16.w,
+                  child: AppIcon(
+                    icon: HugeIcons.strokeRoundedNotification01,
+                    color: colorScheme.onSurface.withValues(alpha: 0.8),
+                    size: 16.sp,
                   ),
-                  child: Center(
-                    child: Text(
-                      '75',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 8.sp,
-                        fontWeight: FontWeight.bold,
+                ),
+                Positioned(
+                  top: -2.h,
+                  right: -2.w,
+                  child: Container(
+                    padding: EdgeInsets.all(4.w),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE11D48), // Vibrant red badge
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 16.w,
+                      minHeight: 16.w,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '75',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
