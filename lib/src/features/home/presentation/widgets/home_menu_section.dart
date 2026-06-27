@@ -26,16 +26,14 @@ class HomeMenuSection extends StatelessWidget {
               label: 'New sale',
               iconColor: const Color(0xFF1A56DB),
               badgeColor: const Color(0xFFEBF2FF),
-              onTap: () => showToast(context,
-                  message: 'New Sale POS tapped', status: 'info'),
+              onTap: () => context.push(AppRoutes.selectItem),
             ),
             AppGridMenuCard(
               icon: Icons.inventory_2_outlined,
               label: 'Products',
               iconColor: const Color(0xFF7C3AED),
               badgeColor: const Color(0xFFF3E8FF),
-              onTap: () => showToast(context,
-                  message: 'Products inventory tapped', status: 'info'),
+              onTap: () => context.go(AppRoutes.products),
             ),
             AppGridMenuCard(
               icon: Icons.swap_horiz_rounded,

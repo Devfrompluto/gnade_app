@@ -49,7 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(height: AppSpacing.xl.h),
+                  SizedBox(height: AppSpacing.md.h),
                   
                   // Storefront Rounded Square Badge
                   Center(
@@ -70,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   
-                  SizedBox(height: AppSpacing.xl.h),
+                  SizedBox(height: AppSpacing.md.h),
                   
                   // Welcome Back Title
                   Text(
@@ -95,7 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   
-                  SizedBox(height: AppSpacing.xxl.h),
+                  SizedBox(height: AppSpacing.lg.h),
                   
                   // Email Input Field
                   AppTextField(
@@ -175,7 +175,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   
-                  SizedBox(height: AppSpacing.lg.h),
+                  SizedBox(height: AppSpacing.md.h),
                   
                   // Login Button
                   AppButton(
@@ -186,7 +186,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     isFullWidth: true,
                   ),
                   
-                  SizedBox(height: AppSpacing.xl.h),
+                  SizedBox(height: AppSpacing.md.h),
                   
                   // Custom Or Divider
                   Row(
@@ -215,7 +215,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ],
                   ),
                   
-                  SizedBox(height: AppSpacing.xl.h),
+                  SizedBox(height: AppSpacing.md.h),
                   
                   // Quick PIN Login Button
                   AppButton(
@@ -232,6 +232,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Icons.dialpad_rounded,
                         size: 20.sp,
                         color: cs.primary,
+                      ),
+                    ),
+                  ),
+                  
+                  SizedBox(height: AppSpacing.md.h),
+
+                  // Footer link to Signup Screen
+                  Center(
+                    child: TextButton(
+                      onPressed: isLoading
+                          ? null
+                          : () => context.go(AppRoutes.signup),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'auth.dont_have_account'.tr(),
+                          style: tt.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.8),
+                            fontSize: 14.sp,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'auth.sign_up'.tr(),
+                              style: TextStyle(
+                                color: cs.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

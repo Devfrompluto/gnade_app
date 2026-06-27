@@ -1,232 +1,140 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-
 import 'package:gnade_app/src/features/auth/presentation/providers/auth_provider.dart';
+import '../widgets/signup_form_card.dart';
 
-class SignupScreen extends ConsumerStatefulWidget {
+class SignupScreen extends ConsumerWidget {
   const SignupScreen({super.key});
 
   @override
-  ConsumerState<SignupScreen> createState() => _SignupScreenState();
-}
-
-class _SignupScreenState extends ConsumerState<SignupScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(authControllerProvider);
+    final cs = context.colors;
+    final tt = context.textTheme;
 
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
-
-    Future<void> handleSignup() async {
-      if (!(_formKey.currentState?.validate() ?? false)) return;
-      
-
+    Future<void> handleSignup({
+      required String name,
+      required String businessName,
+      required String businessCategory,
+      required String phoneNumber,
+      required String email,
+      required String password,
+    }) async {
       ref.read(authControllerProvider.notifier).signUp(
-        context: context, 
-        name: _nameController.text,
-        email: _emailController.text, 
-        password: _passwordController.text,
-      );
+            context: context,
+            name: name,
+            email: email,
+            password: password,
+          );
     }
 
-    return _SignupView(
-      formKey: _formKey,
-      nameController: _nameController,
-      emailController: _emailController,
-      passwordController: _passwordController,
-      confirmPasswordController: _confirmPasswordController,
-      obscurePassword: _obscurePassword,
-      obscureConfirmPassword: _obscureConfirmPassword,
-      isLoading: isLoading,
-      onToggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
-      onToggleConfirmObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-      onSignup: handleSignup,
-      cs: cs,
-      tt: tt,
-    );
-  }
-}
-
-class _SignupView extends StatelessWidget {
-  const _SignupView({
-    required this.formKey,
-    required this.nameController,
-    required this.emailController,
-    required this.passwordController,
-    required this.confirmPasswordController,
-    required this.obscurePassword,
-    required this.obscureConfirmPassword,
-    required this.isLoading,
-    required this.onToggleObscure,
-    required this.onToggleConfirmObscure,
-    required this.onSignup,
-    required this.cs,
-    required this.tt,
-  });
-
-  final GlobalKey<FormState> formKey;
-  final TextEditingController nameController;
-  final TextEditingController emailController;
-  final TextEditingController passwordController;
-  final TextEditingController confirmPasswordController;
-  final bool obscurePassword;
-  final bool obscureConfirmPassword;
-  final bool isLoading;
-  final VoidCallback onToggleObscure;
-  final VoidCallback onToggleConfirmObscure;
-  final VoidCallback onSignup;
-  final ColorScheme cs;
-  final TextTheme tt;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC), // Off-white background
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: const Color(0xFF1A56DB),
+            size: 24.sp,
+          ),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.login);
+            }
+          },
+        ),
+        title: Text(
+          'Kinetic Retail',
+          style: tt.titleLarge?.copyWith(
+            color: const Color(0xFF1A56DB),
+            fontWeight: FontWeight.bold,
+            fontSize: 20.sp,
+          ),
+        ),
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.h),
+          child: Container(
+            color: cs.outlineVariant.withValues(alpha: 0.3),
+            height: 1.h,
+          ),
+        ),
+      ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: AppSpacing.xl.h),
-                Text(
-                  'auth.sign_up'.tr(),
-                  style: tt.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 24.h),
+
+              // Title
+              Text(
+                'Create Account',
+                style: tt.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF0F172A),
+                  fontSize: 26.sp,
+                  letterSpacing: -0.5,
                 ),
-                SizedBox(height: AppSpacing.sm.h),
-                Text(
-                  'auth.sign_up_subtitle'.tr(),
-                  textAlign: TextAlign.center,
-                  style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+              ),
+              SizedBox(height: 6.h),
+
+              // Subtitle
+              Text(
+                'Set up your shop profile to get started.',
+                style: tt.bodyMedium?.copyWith(
+                  color: const Color(0xFF475569),
+                  fontSize: 14.sp,
                 ),
-                SizedBox(height: AppSpacing.xxxl.h),
-                Form(
-                  key: formKey,
-                  child: Column(
-                    children: [
-                      AppTextField(
-                        controller: nameController,
-                        enabled: !isLoading,
-                        label: 'auth.name'.tr(),
-                        prefixIcon: const Icon(Icons.person_outline),
-                        validator: (v) {
-                          if (AppUtils.isBlank(v)) {
-                            return 'auth.name_required'.tr();
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: AppSpacing.md.h),
-                      AppTextField(
-                        controller: emailController,
-                        enabled: !isLoading,
-                        label: 'auth.email'.tr(),
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        validator: (v) {
-                          if (AppUtils.isBlank(v)) {
-                            return 'auth.email_required'.tr();
-                          }
-                          if (!AppUtils.isValidEmail(v!)) {
-                            return 'auth.email_invalid'.tr();
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: AppSpacing.md.h),
-                      AppTextField(
-                        controller: passwordController,
-                        enabled: !isLoading,
-                        label: 'auth.password'.tr(),
-                        obscureText: obscurePassword,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: onToggleObscure,
-                        ),
-                         validator: (v) {
-                          if (AppUtils.isBlank(v)) {
-                            return 'auth.password_required'.tr();
-                          }
-                          if (v!.length < 6) {
-                            return 'auth.password_too_short'.tr();
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: AppSpacing.md.h),
-                      AppTextField(
-                        controller: confirmPasswordController,
-                        enabled: !isLoading,
-                        label: 'auth.confirm_password'.tr(),
-                        obscureText: obscureConfirmPassword,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: onToggleConfirmObscure,
-                        ),
-                         validator: (v) {
-                          if (AppUtils.isBlank(v)) {
-                            return 'auth.confirm_password_required'.tr();
-                          }
-                          if (v != passwordController.text) {
-                            return 'auth.passwords_do_not_match'.tr();
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: AppSpacing.lg.h),
-                      AppButton(
-                        label: 'auth.sign_up'.tr(),
-                        isLoading: isLoading,
-                        onPressed: isLoading ? null : onSignup,
-                        width: ButtonSize.large,
-                        isFullWidth: false,
-                      ),
-                    ],
+              ),
+              SizedBox(height: 24.h),
+
+              // Form Card Widget
+              SignupFormCard(
+                isLoading: isLoading,
+                onSubmit: handleSignup,
+              ),
+              SizedBox(height: 24.h),
+
+              // Footer: Already have an account? Sign In
+              Center(
+                child: TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () => context.go(AppRoutes.login),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                ),
-                SizedBox(height: AppSpacing.xxxl.h),
-                InkWell(
-                  onTap: () {
-                    context.push(AppRoutes.login);
-                  },
                   child: RichText(
                     text: TextSpan(
-                      text: 'auth.already_have_account'.tr(),
-                      style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                      text: 'Already have an account? ',
+                      style: tt.bodyMedium?.copyWith(
+                        color: const Color(0xFF475569),
+                        fontSize: 14.sp,
+                      ),
                       children: [
                         TextSpan(
-                          text: 'auth.log_in'.tr(),
+                          text: 'Sign In',
                           style: TextStyle(
-                            color: cs.primary,
+                            color: const Color(0xFF1A56DB),
                             fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(height: AppSpacing.xl.h),
-              ],
-            ),
+              ),
+              SizedBox(height: 40.h),
+            ],
           ),
         ),
       ),

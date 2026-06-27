@@ -1,14 +1,14 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 
-import 'package:gnade_app/src/features/inventory/presentation/widgets/products_filter_pills.dart';
-import 'package:gnade_app/src/features/inventory/presentation/widgets/products_summary_cards.dart';
-import 'package:gnade_app/src/features/inventory/presentation/widgets/products_categories_list.dart';
-import 'package:gnade_app/src/features/inventory/presentation/widgets/inventory_item_tile.dart';
-import 'package:gnade_app/src/features/inventory/presentation/widgets/inventory_item_grid_tile.dart';
-import 'package:gnade_app/src/features/inventory/presentation/widgets/products_bottom_actions.dart';
-import 'package:gnade_app/src/features/inventory/presentation/widgets/products_menu_sheet.dart';
-import 'package:gnade_app/src/features/inventory/presentation/providers/products_providers.dart';
+import 'package:gnade_app/src/features/products/presentation/widgets/products_filter_pills.dart';
+import 'package:gnade_app/src/features/products/presentation/widgets/products_summary_cards.dart';
+import 'package:gnade_app/src/features/products/presentation/widgets/products_categories_list.dart';
+import 'package:gnade_app/src/features/products/presentation/widgets/inventory_item_tile.dart';
+import 'package:gnade_app/src/features/products/presentation/widgets/inventory_item_grid_tile.dart';
+import 'package:gnade_app/src/features/products/presentation/widgets/products_bottom_actions.dart';
+import 'package:gnade_app/src/features/products/presentation/widgets/products_menu_sheet.dart';
+import 'package:gnade_app/src/features/products/presentation/providers/products_providers.dart';
 
 class ProductsScreen extends ConsumerWidget {
   const ProductsScreen({super.key});
