@@ -160,8 +160,6 @@ class CustomersScreen extends ConsumerWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.01),
@@ -170,13 +168,17 @@ class CustomersScreen extends ConsumerWidget {
           ),
         ],
       ),
-      child: ListTile(
-        onTap: () {
-          context.pushNamed(
-            'customerDetails',
-            pathParameters: {'id': c.id},
-          );
-        },
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          onTap: () {
+            context.pushNamed(
+              'customerDetails',
+              pathParameters: {'id': c.id},
+            );
+          },
         contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
         leading: Container(
           width: 44.w,
@@ -273,6 +275,6 @@ class CustomersScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ),);
   }
 }

@@ -14,6 +14,8 @@ class AuthRepositoryImpl implements AuthRepository {
     id: 'mock-user-123',
     email: 'owner@gnade.com',
     name: 'Gnade Owner',
+    businessId: 'mock-business-456',
+    role: 'owner',
   );
 
   @override
@@ -34,7 +36,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   FutureEither<AppUser> login({
-    required String email, 
+    required String email,
     required String password,
   }) async {
     if (AppConfig.useMockData) {
@@ -43,58 +45,118 @@ class AuthRepositoryImpl implements AuthRepository {
       _mockUserStreamController.add(_currentMockUser);
       return right(_mockUser);
     }
-    
-    final result = await _authService.login(email: email, password: password);
-    
-    return result.flatMap((userData) {
-      if (userData == null) {
-        return left(const ServerFailure('Login failed: User record not found'));
-      }
 
-      final user = AppUser(
-        id: userData['id'], 
-        email: userData['email'] ?? email, 
-        name: userData['name'],
-        photoUrl: userData['photoUrl'],
-      );
-      
-      return right(user);
-    });
+    // 1. Authenticate with Supabase Auth
+    final result = await _authService.login(email: email, password: password);
+
+    return result.fold(
+      (failure) => left(failure),
+      (userData) async {
+        if (userData == null) {
+          return left(const ServerFailure('Login failed: User record not found'));
+        }
+
+        // 2. Fetch user profile (business_id, role) from users table
+        final profileResult = await _authService.getUserProfile();
+
+        return profileResult.fold(
+          (failure) => left(failure),
+          (profile) {
+            if (profile == null) {
+              // Orphaned auth user — no users row exists.
+              // Return a partial AppUser so session_provider can detect this.
+              return right(AppUser(
+                id: userData['id'],
+                email: userData['email'] ?? email,
+                name: userData['name'],
+                photoUrl: userData['photoUrl'],
+              ));
+            }
+
+            return right(AppUser(
+              id: userData['id'],
+              email: userData['email'] ?? email,
+              name: profile['full_name'] ?? userData['name'],
+              photoUrl: userData['photoUrl'],
+              businessId: profile['business_id'],
+              role: profile['role'],
+            ));
+          },
+        );
+      },
+    );
   }
 
   @override
   FutureEither<AppUser> signUp({
-    required String name, 
-    required String email, 
+    required String name,
+    required String email,
     required String password,
+    required String businessName,
+    required String businessCategory,
+    required String phoneNumber,
   }) async {
     if (AppConfig.useMockData) {
       await Future<void>.delayed(const Duration(milliseconds: 600));
-      final user = AppUser(id: 'mock-user-123', email: email, name: name);
+      final user = AppUser(
+        id: 'mock-user-123',
+        email: email,
+        name: name,
+        businessId: 'mock-business-456',
+        role: 'owner',
+      );
       _currentMockUser = user;
       _mockUserStreamController.add(_currentMockUser);
       return right(user);
     }
-    
-    final result = await _authService.signUp(
+
+    // 1. Register with Supabase Auth
+    final authResult = await _authService.signUp(
       name: name,
       email: email,
       password: password,
     );
 
-    return result.flatMap((userData) {
-      if (userData == null) {
-        return left(const ServerFailure('Sign up failed: User record corrupted'));
-      }
+    return authResult.fold(
+      (failure) => left(failure),
+      (userData) async {
+        if (userData == null) {
+          return left(const ServerFailure('Sign up failed: User record not created'));
+        }
 
-      final user = AppUser(
-        id: userData['id'], 
-        email: userData['email'] ?? email, 
-        name: name,
-      );
-      
-      return right(user);
-    });
+        // 2. Call initialize_business RPC to atomically create business + user rows
+        final initResult = await _authService.initializeBusiness(
+          businessName: businessName,
+          businessCategory: businessCategory,
+          userName: name,
+          userPhone: phoneNumber,
+        );
+
+        return initResult.fold(
+          (failure) {
+            // Auth user was created but business init failed.
+            // Return partial user — session_provider will detect orphan state.
+            AppLogger.error(
+              'Business initialization failed after sign up: ${failure.message}',
+            );
+            return right(AppUser(
+              id: userData['id'],
+              email: userData['email'] ?? email,
+              name: name,
+            ));
+          },
+          (initData) {
+            return right(AppUser(
+              id: userData['id'],
+              email: userData['email'] ?? email,
+              name: name,
+              businessId: initData['business_id'],
+              role: initData['role'],
+            ));
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -120,18 +182,49 @@ class AuthRepositoryImpl implements AuthRepository {
     if (AppConfig.useMockData) {
       return right(_currentMockUser);
     }
-    
-    final result = await _authService.getCurrentUser();
-    
-    return result.map((userData) {
-      if (userData == null) return null;
 
-      return AppUser(
-        id: userData['id'], 
-        email: userData['email'] ?? '', 
-        name: userData['name'],
-        photoUrl: userData['photoUrl'],
-      );
-    });
+    final result = await _authService.getCurrentUser();
+
+    return result.fold(
+      (failure) => left(failure),
+      (userData) async {
+        if (userData == null) return right(null);
+
+        // Fetch user profile to get business_id and role
+        final profileResult = await _authService.getUserProfile();
+
+        return profileResult.fold(
+          (failure) {
+            // Return partial user — profile fetch failed but auth session exists
+            return right(AppUser(
+              id: userData['id'],
+              email: userData['email'] ?? '',
+              name: userData['name'],
+              photoUrl: userData['photoUrl'],
+            ));
+          },
+          (profile) {
+            if (profile == null) {
+              // Orphaned auth user — session exists but no users row
+              return right(AppUser(
+                id: userData['id'],
+                email: userData['email'] ?? '',
+                name: userData['name'],
+                photoUrl: userData['photoUrl'],
+              ));
+            }
+
+            return right(AppUser(
+              id: userData['id'],
+              email: userData['email'] ?? '',
+              name: profile['full_name'] ?? userData['name'],
+              photoUrl: userData['photoUrl'],
+              businessId: profile['business_id'],
+              role: profile['role'],
+            ));
+          },
+        );
+      },
+    );
   }
 }

@@ -2,12 +2,7 @@ import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 
 import 'package:gnade_app/src/features/auth/domain/repositories/auth_repository.dart';
-import 'package:gnade_app/src/features/auth/data/repositories/auth_repository_impl.dart';
-
-// Provides the single instance of AuthRepositoryImpl 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl();
-});
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 
 final authControllerProvider = StateNotifierProvider<AuthController, bool>((ref) {
   return AuthController(
@@ -43,10 +38,25 @@ class AuthController extends StateNotifier<bool> {
     );
   }
 
-  void signUp({required BuildContext context, required String name, required String email, required String password}) async {
+  void signUp({
+    required BuildContext context,
+    required String name,
+    required String email,
+    required String password,
+    required String businessName,
+    required String businessCategory,
+    required String phoneNumber,
+  }) async {
     state = true;
     
-    final result = await _repository.signUp(name: name, email: email, password: password);
+    final result = await _repository.signUp(
+      name: name,
+      email: email,
+      password: password,
+      businessName: businessName,
+      businessCategory: businessCategory,
+      phoneNumber: phoneNumber,
+    );
     
     state = false;
     result.fold(
@@ -86,4 +96,3 @@ class AuthController extends StateNotifier<bool> {
     );
   }
 }
-

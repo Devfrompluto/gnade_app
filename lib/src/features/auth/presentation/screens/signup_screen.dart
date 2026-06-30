@@ -25,6 +25,9 @@ class SignupScreen extends ConsumerWidget {
             name: name,
             email: email,
             password: password,
+            businessName: businessName,
+            businessCategory: businessCategory,
+            phoneNumber: phoneNumber,
           );
     }
 

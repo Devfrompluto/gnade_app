@@ -11,11 +11,14 @@ abstract class AuthRepository {
     required String password,
   });
 
-  /// Sign up with email, password, and optional name
+  /// Sign up with email, password, and business details
   FutureEither<AppUser> signUp({
     required String name,
     required String email,
     required String password,
+    required String businessName,
+    required String businessCategory,
+    required String phoneNumber,
   });
 
   /// Send a password reset email

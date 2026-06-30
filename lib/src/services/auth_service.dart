@@ -91,6 +91,42 @@ class AuthService {
     });
   }
 
+  /// Fetch the user's profile from the `users` table (business_id, role, etc.)
+  FutureEither<Map<String, dynamic>?> getUserProfile() async {
+    return runTask(() async {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return null;
+      final data = await _supabaseClient
+          .from('users')
+          .select('business_id, full_name, phone, role')
+          .eq('id', userId)
+          .maybeSingle();
+      return data;
+    });
+  }
+
+  /// Call the `initialize_business` RPC to atomically create a business + user row.
+  /// Returns `{ business_id, role }` on success.
+  FutureEither<Map<String, dynamic>> initializeBusiness({
+    required String businessName,
+    String? businessCategory,
+    required String userName,
+    String? userPhone,
+  }) async {
+    return runTask(() async {
+      final result = await _supabaseClient.rpc<Map<String, dynamic>>(
+        'initialize_business',
+        params: {
+          'p_business_name': businessName,
+          'p_business_category': businessCategory,
+          'p_user_name': userName,
+          'p_user_phone': userPhone,
+        },
+      );
+      return result;
+    }, requiresNetwork: true);
+  }
+
   void dispose() {
     // Supabase manages its own streams
   }

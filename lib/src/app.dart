@@ -24,6 +24,13 @@ class App extends StatelessWidget {
         Widget current = child!;
         current = SkeletonWrapper(child: current);
         current = SessionListenerWrapper(child: current);
+        
+        // Globally dismiss keyboard on tap outside input fields
+        current = GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: current,
+        );
+        
         return current;
       },
     );

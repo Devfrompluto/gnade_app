@@ -5,7 +5,7 @@ import 'package:gnade_app/src/features/auth/domain/repositories/auth_repository.
 
 import 'package:gnade_app/src/features/auth/data/repositories/auth_repository_impl.dart';
 
-/// Provides the AuthRepository instance
+/// Provides the AuthRepository instance (single source of truth)
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl();
 });
@@ -23,7 +23,14 @@ final sessionProvider = StateNotifierProvider<SessionNotifier, SessionState>((re
 });
 
 /// Session states
-enum SessionStatus { unknown, authenticated, unauthenticated }
+enum SessionStatus {
+  unknown,
+  authenticated,
+  unauthenticated,
+  /// Auth session exists but no users row (orphaned auth user).
+  /// The user needs to complete their profile / business setup.
+  incomplete,
+}
 
 class SessionState {
   final SessionStatus status;
@@ -55,10 +62,13 @@ class SessionNotifier extends StateNotifier<SessionState> {
     result.fold(
       (_) => state = const SessionState(status: SessionStatus.unauthenticated),
       (user) {
-        if (user != null) {
-          state = SessionState(status: SessionStatus.authenticated, user: user);
-        } else {
+        if (user == null) {
           state = const SessionState(status: SessionStatus.unauthenticated);
+        } else if (!user.isInitialized) {
+          // Auth session exists but no business_id — orphaned user
+          state = SessionState(status: SessionStatus.incomplete, user: user);
+        } else {
+          state = SessionState(status: SessionStatus.authenticated, user: user);
         }
       },
     );
@@ -84,4 +94,3 @@ class SessionNotifier extends StateNotifier<SessionState> {
     super.dispose();
   }
 }
-

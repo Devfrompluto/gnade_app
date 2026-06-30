@@ -17,6 +17,9 @@ class SessionListenerWrapper extends ConsumerWidget {
         if (navContext != null && navContext.mounted) {
           if (next.status == SessionStatus.authenticated) {
             navContext.go(AppRoutes.dashboard);
+          } else if (next.status == SessionStatus.incomplete) {
+            // Orphaned auth user — redirect to signup to complete profile
+            navContext.go(AppRoutes.signup);
           } else if (next.status == SessionStatus.unauthenticated) {
             navContext.go(AppRoutes.onboarding);
           }

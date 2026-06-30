@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConfig {
   AppConfig._();
-  static const bool useMockData = true;
+  static const bool useMockData = false;
   static late final Dio dio;
   static late final SupabaseClient supabase;
 

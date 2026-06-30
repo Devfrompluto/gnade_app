@@ -67,7 +67,9 @@ class A4ReceiptActions extends StatelessWidget {
                     'Invoice #${data.invoiceNo} for ${data.customerName}\n'
                     'Total due: ₦${data.total.toStringAsFixed(0)}\n'
                     'Thank you for shopping at ${data.businessName}!';
-                Share.share(shareText);
+                SharePlus.instance.share(
+                  ShareParams(text: shareText),
+                );
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
