@@ -1,7 +1,9 @@
 import 'package:gnade_app/src/imports/imports.dart';
+import 'package:gnade_app/src/features/home/domain/entities/dashboard_data.dart';
 
 class SoldProductsSection extends StatelessWidget {
-  const SoldProductsSection({super.key});
+  final List<SoldProductItem> items;
+  const SoldProductsSection({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -24,95 +26,100 @@ class SoldProductsSection extends StatelessWidget {
 
         SizedBox(height: AppSpacing.md.h),
 
-        // Sold Products Table Container
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-              width: 1,
+        if (items.isEmpty) ...[
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                width: 1,
+              ),
+            ),
+            child: const AppEmptyState(
+              icon: Icons.shopping_basket_outlined,
+              title: 'No sales today',
+              subtitle: 'Any products sold today will show up here.',
             ),
           ),
-          child: Column(
-            children: [
-              // Table Header
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: Text(
-                        'Products',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11.sp,
+        ] else ...[
+          // Sold Products Table Container
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                // Table Header
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: Text(
+                          'Products',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFF64748B),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11.sp,
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Qty sold',
-                        textAlign: TextAlign.center,
-                        style: textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11.sp,
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Qty sold',
+                          textAlign: TextAlign.center,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFF64748B),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11.sp,
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Sales amount(₦)',
-                        textAlign: TextAlign.center,
-                        style: textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11.sp,
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Sales amount',
+                          textAlign: TextAlign.center,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFF64748B),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11.sp,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              const Divider(),
+                const Divider(),
 
-              // Table Rows
-              _buildSoldRow(
-                name: 'Nirvana Bottled water',
-                qty: '4.0',
-                amount: '6,000',
-                textTheme: textTheme,
-              ),
-              const Divider(),
-              _buildSoldRow(
-                name: 'Goldberg Bottle',
-                qty: '2.0',
-                amount: '18,200',
-                textTheme: textTheme,
-              ),
-              const Divider(),
-              _buildSoldRow(
-                name: 'Heineken 45cl (medium)',
-                qty: '2.0',
-                amount: '34,400',
-                textTheme: textTheme,
-              ),
-              const Divider(),
-              _buildSoldRow(
-                name: 'Legend Bottle',
-                qty: '1.0',
-                amount: '11,800',
-                textTheme: textTheme,
-              ),
-            ],
+                // Table Rows
+                ...items.map((item) {
+                  final isLast = items.indexOf(item) == items.length - 1;
+                  return Column(
+                    children: [
+                      _buildSoldRow(
+                        name: item.productName,
+                        qty: item.quantitySold.toString(),
+                        amount: NumberFormat('#,##0').format(item.salesAmount),
+                        textTheme: textTheme,
+                      ),
+                      if (!isLast) const Divider(),
+                    ],
+                  );
+                }),
+              ],
+            ),
           ),
-        ),
+        ],
 
         SizedBox(height: AppSpacing.xxl.h),
       ],

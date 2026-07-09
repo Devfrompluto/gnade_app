@@ -4,35 +4,20 @@ import 'package:gnade_app/src/features/sales/presentation/widgets/sale_summary_c
 import 'package:gnade_app/src/features/sales/presentation/widgets/sale_products_card.dart';
 import 'package:gnade_app/src/features/sales/presentation/widgets/sale_totals_card.dart';
 import 'package:gnade_app/src/features/sales/presentation/widgets/sale_details_bottom_bar.dart';
+import '../providers/sales_providers.dart';
 
-class SaleDetailsScreen extends StatelessWidget {
+class SaleDetailsScreen extends ConsumerWidget {
   final String id;
 
   const SaleDetailsScreen({super.key, required this.id});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    // Mock data derived from id for testing UI logic
-    final String paymentStatus;
-    final double amountPaid;
-    const double total = 105887.50;
-    
-    // Generate a status deterministically based on the length of the string
-    // Or just simple condition to show the different states.
-    if (id.isEmpty || id.length % 3 == 0) {
-      paymentStatus = 'Paid';
-      amountPaid = total;
-    } else if (id.length % 3 == 1) {
-      paymentStatus = 'Unpaid';
-      amountPaid = 0.0;
-    } else {
-      paymentStatus = 'Partial';
-      amountPaid = 50000.0;
-    }
+    final saleDetailsAsync = ref.watch(saleDetailsProvider(id));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9), // Slight gray background
@@ -57,29 +42,58 @@ class SaleDetailsScreen extends StatelessWidget {
         centerTitle: false,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                child: Column(
-                  children: [
-                    SaleSummaryCard(paymentStatus: paymentStatus),
-                    SizedBox(height: 12.h),
-                    const SaleProductsCard(),
-                    SizedBox(height: 12.h),
-                    SaleTotalsCard(
-                      paymentStatus: paymentStatus,
-                      total: total,
-                      amountPaid: amountPaid,
+        child: saleDetailsAsync.when(
+          data: (sale) {
+            // Capitalize status string for legacy widget compatibility
+            final rawStatus = sale.status.toLowerCase();
+            final paymentStatus = rawStatus == 'paid' 
+                ? 'Paid' 
+                : (rawStatus == 'partial' ? 'Partial' : 'Unpaid');
+
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    child: Column(
+                      children: [
+                        SaleSummaryCard(sale: sale),
+                        SizedBox(height: 12.h),
+                        SaleProductsCard(
+                          items: sale.items ?? const [],
+                          discount: sale.discount,
+                          totalAmount: sale.totalAmount,
+                        ),
+                        SizedBox(height: 12.h),
+                        SaleTotalsCard(
+                          paymentStatus: paymentStatus,
+                          total: sale.totalAmount,
+                          amountPaid: sale.amountPaid,
+                        ),
+                        SizedBox(height: 24.h),
+                      ],
                     ),
-                    SizedBox(height: 24.h), // Extra padding before bottom bar
-                  ],
+                  ),
                 ),
+                SaleDetailsBottomBar(sale: sale),
+              ],
+            );
+          },
+          loading: () => const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFF1E40AF),
+            ),
+          ),
+          error: (error, _) => Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Center(
+              child: Text(
+                'Error loading sale details: $error',
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
               ),
             ),
-            SaleDetailsBottomBar(paymentStatus: paymentStatus),
-          ],
+          ),
         ),
       ),
     );

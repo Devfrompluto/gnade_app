@@ -1,13 +1,18 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import '../../../auth/presentation/providers/session_provider.dart';
 
-class SaleDetailsBottomBar extends StatelessWidget {
-  final String paymentStatus;
+class SaleDetailsBottomBar extends ConsumerWidget {
+  final Sale sale;
 
-  const SaleDetailsBottomBar({super.key, required this.paymentStatus});
+  const SaleDetailsBottomBar({super.key, required this.sale});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rawStatus = sale.status.toLowerCase();
+    final String paymentStatus = rawStatus == 'paid' 
+        ? 'Paid' 
+        : (rawStatus == 'partial' ? 'Partial' : 'Unpaid');
     final bool isPaid = paymentStatus == 'Paid';
 
     return Container(
@@ -38,7 +43,12 @@ class SaleDetailsBottomBar extends StatelessWidget {
                   ),
                   elevation: 0,
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  showGlobalToast(
+                    message: isPaid ? 'Refund processing is not supported yet.' : 'Payment collection is not supported yet.',
+                    status: 'info',
+                  );
+                },
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Row(
@@ -73,7 +83,58 @@ class SaleDetailsBottomBar extends StatelessWidget {
                   ),
                   elevation: 0,
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  final businessProfile = ref.read(businessProfileProvider).value;
+                  final String bName = businessProfile?.name ?? 'GNADE MULTICONCEPT';
+                  final String bAddress = businessProfile?.address ?? '123 Market Street, Victoria Island, Lagos';
+                  final String bPhone = businessProfile?.phone ?? '+234 800 123 4567';
+                  const String bEmail = 'contact@gnademulticoncept.com';
+
+                  final receiptItems = (sale.items ?? <SaleItem>[]).map((item) {
+                    return ReceiptItem(
+                      name: item.productName,
+                      quantity: item.quantity,
+                      unitPrice: item.unitPrice,
+                      total: item.total,
+                    );
+                  }).toList();
+
+                  final calculatedSubtotal = receiptItems.fold<double>(0, (sum, item) => sum + item.total);
+                  final calculatedTax = sale.totalAmount - (calculatedSubtotal - sale.discount);
+
+                  String displayPaymentMethod = sale.paymentMethod;
+                  if (displayPaymentMethod.toLowerCase() == 'cash') {
+                    displayPaymentMethod = 'Cash';
+                  } else if (displayPaymentMethod.toLowerCase() == 'bank' || displayPaymentMethod.toLowerCase() == 'transfer') {
+                    displayPaymentMethod = 'Bank Transfer';
+                  } else if (displayPaymentMethod.toLowerCase() == 'mobile') {
+                    displayPaymentMethod = 'Mobile Payment';
+                  } else if (displayPaymentMethod.toLowerCase() == 'credit') {
+                    displayPaymentMethod = 'Credit / Debt';
+                  }
+
+                  final receiptData = ReceiptData(
+                    businessName: bName,
+                    businessAddress: bAddress,
+                    businessPhone: bPhone,
+                    businessEmail: bEmail,
+                    invoiceNo: sale.invoiceNo,
+                    dateTime: sale.createdAt,
+                    customerName: sale.customerName,
+                    customerType: sale.customerName == 'Retail Customer'
+                        ? 'Regular Customer'
+                        : 'Retail Customer',
+                    items: receiptItems,
+                    subtotal: calculatedSubtotal,
+                    tax: calculatedTax > 0.01 ? calculatedTax : 0.0,
+                    total: sale.totalAmount,
+                    amountPaid: sale.amountPaid,
+                    paymentMethod: displayPaymentMethod,
+                    paymentStatus: paymentStatus,
+                  );
+
+                  context.push(AppRoutes.printReceipt, extra: receiptData);
+                },
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Row(

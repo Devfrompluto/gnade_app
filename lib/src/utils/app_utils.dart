@@ -23,8 +23,18 @@ class AppUtils {
 
   /// Checks if string is phone number.
   static bool isPhoneNumber(String s) {
-    if (s.length > 16 || s.length < 9) return false;
+    if (s.length > 16 || s.length < 8) return false;
     return hasMatch(s, r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$');
+  }
+
+  /// Format a raw phone number input with a country dial code to E.164 format.
+  /// Strips any leading '0' or non-digit characters.
+  static String formatE164(String dialCode, String rawNumber) {
+    String cleaned = rawNumber.replaceAll(RegExp(r'\D'), '');
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    return '$dialCode$cleaned';
   }
 
   static bool hasMatch(String? value, String pattern) {
@@ -33,7 +43,7 @@ class AppUtils {
 
   static bool isValidEmail(String s) {
     final emailRegExp = RegExp(
-      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
     return emailRegExp.hasMatch(s);
   }

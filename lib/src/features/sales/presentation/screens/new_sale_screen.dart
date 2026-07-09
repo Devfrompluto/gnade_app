@@ -1,16 +1,16 @@
 import 'dart:math';
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-import 'package:gnade_app/src/features/customers/domain/entities/customer.dart';
-import '../widgets/product_item_tile.dart';
+import '../providers/sales_providers.dart';
+import '../../../auth/presentation/providers/session_provider.dart';
 import '../widgets/cart_item_tile.dart';
 import '../widgets/payment_method_selector.dart';
 import '../widgets/payment_status_selector.dart';
 import '../widgets/customer_selection_card.dart';
 import '../widgets/adjustments_card.dart';
 
-class NewSaleScreen extends StatefulWidget {
-  final List<ProductItemMock> selectedItems;
+class NewSaleScreen extends ConsumerStatefulWidget {
+  final List<Product> selectedItems;
   final Map<String, int> initialQuantities;
 
   const NewSaleScreen({
@@ -20,10 +20,10 @@ class NewSaleScreen extends StatefulWidget {
   });
 
   @override
-  State<NewSaleScreen> createState() => _NewSaleScreenState();
+  ConsumerState<NewSaleScreen> createState() => _NewSaleScreenState();
 }
 
-class _NewSaleScreenState extends State<NewSaleScreen> {
+class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
   // Local cart items list
   late List<ProductItemMock> _cartItems;
   // Local cart item quantities
@@ -40,7 +40,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   String _paymentStatus = 'Paid'; // Paid, Unpaid, Partial
   
   // Amount paid controller (used for Partial payment status)
-  final TextEditingController _amountPaidController = TextEditingController(text: '50000');
+  final TextEditingController _amountPaidController = TextEditingController(text: '');
   
   // Adjustments inputs controllers
   final TextEditingController _discountController = TextEditingController(text: '0');
@@ -49,15 +49,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   // Adjustments visibility toggles (Remove link can hide or reset them)
   bool _hasDiscount = false;
   bool _hasTax = false;
-
-  // Price map matching mockup exactly
-  final Map<String, double> _productPrices = {
-    'p1': 45000, // Premium Rice 50kg
-    'p2': 8500,  // Vegetable Oil 5L
-    'p3': 1500,  // Burst Berry drink
-    'p4': 2000,  // Star radler bottle
-    'p5': 2200,  // Tiger bottle
-  };
 
   @override
   void initState() {
@@ -91,7 +82,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     double sub = 0;
     for (final item in _cartItems) {
       final qty = _quantities[item.id] ?? 0.0;
-      final price = _productPrices[item.id] ?? 0.0;
+      final price = item.sellPrice;
       sub += price * qty;
     }
     return sub;
@@ -222,7 +213,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                         itemBuilder: (context, index) {
                           final item = _cartItems[index];
                           final qty = _quantities[item.id] ?? 1.0;
-                          final price = _productPrices[item.id] ?? 0;
+                          final price = item.sellPrice;
 
                           return CartItemTile(
                             item: item,
@@ -304,34 +295,40 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                             onMethodChanged: (method) {
                               setState(() {
                                 _paymentMethod = method;
-                              });
-                            },
-                          ),
-                          SizedBox(height: 16.h),
-
-                          // Payment Status Title
-                          Text(
-                            'Payment Status',
-                            style: TextStyle(
-                              color: const Color(0xFF64748B),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11.sp,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          PaymentStatusSelector(
-                            selectedStatus: _paymentStatus,
-                            onStatusChanged: (status) {
-                              setState(() {
-                                _paymentStatus = status;
-                                // Default amount paid for Partial
-                                if (status == 'Partial') {
-                                  _amountPaidController.text = '50000';
+                                if (method == 'Credit') {
+                                  _paymentStatus = 'Unpaid';
+                                } else {
+                                  _paymentStatus = 'Paid';
                                 }
                               });
                             },
                           ),
-                          SizedBox(height: 16.h),
+                          if (_paymentMethod != 'Credit') ...[
+                            SizedBox(height: 16.h),
+                            // Payment Status Title
+                            Text(
+                              'Payment Status',
+                              style: TextStyle(
+                                color: const Color(0xFF64748B),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11.sp,
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            PaymentStatusSelector(
+                              selectedStatus: _paymentStatus,
+                              onStatusChanged: (status) {
+                                setState(() {
+                                  _paymentStatus = status;
+                                  // Default amount paid for Partial
+                                  if (status == 'Partial') {
+                                    _amountPaidController.text = '';
+                                  }
+                                });
+                              },
+                            ),
+                            SizedBox(height: 16.h),
+                          ],
 
                           // ─── Conditional Partial payment inputs ─────────────
                           if (_paymentStatus == 'Partial') ...[
@@ -628,44 +625,46 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     ),
                     SizedBox(height: 10.h),
 
-                    // Payment status indicator
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Payment Status',
-                          style: TextStyle(
-                            color: const Color(0xFF64748B),
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-                          decoration: BoxDecoration(
-                            color: _paymentStatus == 'Paid'
-                                ? const Color(0xFFECFDF5)
-                                : _paymentStatus == 'Partial'
-                                    ? const Color(0xFFFFF7ED)
-                                    : const Color(0xFFFEF2F2),
-                            borderRadius: BorderRadius.circular(20.r),
-                          ),
-                          child: Text(
-                            _paymentStatus,
+                    if (_paymentMethod != 'Credit') ...[
+                      // Payment status indicator
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Payment Status',
                             style: TextStyle(
-                              color: _paymentStatus == 'Paid'
-                                  ? const Color(0xFF059669)
-                                  : _paymentStatus == 'Partial'
-                                      ? const Color(0xFFD97706)
-                                      : const Color(0xFFDC2626),
+                              color: const Color(0xFF64748B),
                               fontSize: 11.sp,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+                            decoration: BoxDecoration(
+                              color: _paymentStatus == 'Paid'
+                                  ? const Color(0xFFECFDF5)
+                                  : _paymentStatus == 'Partial'
+                                      ? const Color(0xFFFFF7ED)
+                                      : const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              _paymentStatus,
+                              style: TextStyle(
+                                color: _paymentStatus == 'Paid'
+                                    ? const Color(0xFF059669)
+                                    : _paymentStatus == 'Partial'
+                                        ? const Color(0xFFD97706)
+                                        : const Color(0xFFDC2626),
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8.h),
+                    ],
 
                     // Complete Sale Button
                     SizedBox(
@@ -729,11 +728,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   // Dynamic bottom sheet for custom payment and quick amount calculations
   void _showPaymentConfirmationSheet(double total) {
     final isUnpaid = _paymentStatus == 'Unpaid';
+    final initialPartialText = _amountPaidController.text.isNotEmpty
+        ? _amountPaidController.text
+        : (total / 2).toStringAsFixed(2);
+    final initialPartialVal = double.tryParse(initialPartialText) ?? (total / 2);
+
     final TextEditingController amountController = TextEditingController(
-      text: _paymentStatus == 'Partial' ? '50000.00' : (isUnpaid ? '0.00' : total.toStringAsFixed(2)),
+      text: _paymentStatus == 'Partial' ? initialPartialText : (isUnpaid ? '0.00' : total.toStringAsFixed(2)),
     );
-    String selectedMethod = isUnpaid ? 'Credit' : 'Cash'; // Cash, Bank, Card
-    double amountReceived = _paymentStatus == 'Partial' ? 50000.0 : (isUnpaid ? 0.0 : total);
+    String selectedMethod = isUnpaid ? 'Credit' : (_paymentMethod == 'Credit' ? 'Cash' : _paymentMethod);
+    double amountReceived = _paymentStatus == 'Partial' ? initialPartialVal : (isUnpaid ? 0.0 : total);
 
     // Generate quick pills based on total
     final ceil1k = (total / 1000).ceil() * 1000.0;
@@ -1039,82 +1043,140 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                         ),
                         elevation: 0,
                       ),
-                      onPressed: () {
-                        // Block partial if amount >= total
-                        if (_paymentStatus == 'Partial' && amountReceived >= total) {
-                          return;
-                        }
-                        // Block partial if field is empty / zero
-                        if (_paymentStatus == 'Partial' && amountReceived <= 0) {
-                          return;
-                        }
-                        Navigator.pop(context);
+                      onPressed: ref.watch(salesCheckoutProvider).isLoading
+                          ? null
+                          : () async {
+                              // Block partial if amount >= total
+                              if (_paymentStatus == 'Partial' && amountReceived >= total) {
+                                return;
+                              }
+                              // Block partial if field is empty / zero
+                              if (_paymentStatus == 'Partial' && amountReceived <= 0) {
+                                return;
+                              }
 
-                        final receiptItems = _cartItems.map((item) {
-                          final qty = _quantities[item.id] ?? 1.0;
-                          final price = _productPrices[item.id] ?? 0.0;
-                          return ReceiptItem(
-                            name: item.name,
-                            quantity: qty,
-                            unitPrice: price,
-                            total: price * qty,
-                          );
-                        }).toList();
+                              final businessProfile = ref.read(businessProfileProvider).value;
+                              final String bName = businessProfile?.name ?? 'GNADE MULTICONCEPT';
+                              final String bAddress = businessProfile?.address ?? '123 Market Street, Victoria Island, Lagos';
+                              final String bPhone = businessProfile?.phone ?? '+234 800 123 4567';
+                              const String bEmail = 'contact@gnademulticoncept.com';
+                              final String? bLogoUrl = businessProfile?.logoUrl;
 
-                        final calculatedSubtotal = _calculateSubtotal();
-                        final calculatedDiscount = _getDiscountValue();
-                        final calculatedTax = _getTaxValue(calculatedSubtotal);
-                        final calculatedTotal =
-                            calculatedSubtotal - calculatedDiscount + calculatedTax;
-                        final finalAmountPaid = isUnpaid
-                            ? 0.0
-                            : (_paymentStatus == 'Partial'
-                                ? amountReceived
-                                : calculatedTotal);
+                              final receiptItems = _cartItems.map((item) {
+                                final qty = _quantities[item.id] ?? 1.0;
+                                final price = item.sellPrice;
+                                return ReceiptItem(
+                                  name: item.name,
+                                  quantity: qty,
+                                  unitPrice: price,
+                                  total: price * qty,
+                                );
+                              }).toList();
 
-                        final receiptData = ReceiptData(
-                          businessName: 'GNADE MULTICONCEPT',
-                          businessAddress: '123 Market Street, Victoria Island, Lagos',
-                          businessPhone: '+234 800 123 4567',
-                          businessEmail: 'contact@gnademulticoncept.com',
-                          invoiceNo: _invoiceNo,
-                          dateTime: DateTime.now(),
-                          customerName: _selectedCustomer == 'None'
-                              ? 'Retail Customer'
-                              : _selectedCustomer,
-                          customerType: _selectedCustomer == 'None'
-                              ? 'Regular Customer'
-                              : 'Retail Customer',
-                          items: receiptItems,
-                          subtotal: calculatedSubtotal,
-                          tax: calculatedTax,
-                          total: calculatedTotal,
-                          amountPaid: finalAmountPaid,
-                          paymentMethod: isUnpaid ? 'Credit' : selectedMethod,
-                          paymentStatus: _paymentStatus,
-                        );
+                              final calculatedSubtotal = _calculateSubtotal();
+                              final calculatedDiscount = _getDiscountValue();
+                              final calculatedTax = _getTaxValue(calculatedSubtotal);
+                              final calculatedTotal =
+                                  calculatedSubtotal - calculatedDiscount + calculatedTax;
+                              final finalAmountPaid = isUnpaid
+                                  ? 0.0
+                                  : (_paymentStatus == 'Partial'
+                                      ? amountReceived
+                                      : calculatedTotal);
 
-                        context.push(
-                          AppRoutes.saleSuccess,
-                          extra: {
-                            'invoiceNo': _invoiceNo,
-                            'amountPaid': finalAmountPaid,
-                            'paymentMethod': isUnpaid ? 'Credit' : selectedMethod,
-                            'paymentStatus': _paymentStatus,
-                            'total': calculatedTotal,
-                            'dateTime': DateTime.now(),
-                            'receiptData': receiptData,
-                          },
-                        );
-                      },
-                      child: Text(
-                        isUnpaid ? 'Confirm Debt / Unpaid Sale' : 'Confirm Payment',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                              final receiptData = ReceiptData(
+                                businessName: bName,
+                                businessAddress: bAddress,
+                                businessPhone: bPhone,
+                                businessEmail: bEmail,
+                                businessLogoUrl: bLogoUrl,
+                                invoiceNo: _invoiceNo,
+                                dateTime: DateTime.now(),
+                                customerName: _selectedCustomer == 'None'
+                                    ? 'Retail Customer'
+                                    : _selectedCustomer,
+                                customerType: _selectedCustomer == 'None'
+                                    ? 'Regular Customer'
+                                    : 'Retail Customer',
+                                items: receiptItems,
+                                subtotal: calculatedSubtotal,
+                                tax: calculatedTax,
+                                total: calculatedTotal,
+                                amountPaid: finalAmountPaid,
+                                paymentMethod: isUnpaid ? 'Credit' : selectedMethod,
+                                paymentStatus: _paymentStatus,
+                              );
+
+                              final saleResult = await ref.read(salesCheckoutProvider.notifier).recordSale(
+                                customerName: _selectedCustomer == 'None' ? 'Retail Customer' : _selectedCustomer,
+                                totalAmount: calculatedTotal,
+                                amountPaid: finalAmountPaid,
+                                discount: calculatedDiscount,
+                                paymentMethod: isUnpaid
+                                    ? 'credit'
+                                    : (selectedMethod.toLowerCase() == 'cash'
+                                        ? 'cash'
+                                        : 'transfer'),
+                                status: _paymentStatus == 'Unpaid'
+                                    ? 'debt'
+                                    : _paymentStatus.toLowerCase(),
+                                invoiceNo: _invoiceNo,
+                                items: _cartItems.map((item) {
+                                  final qty = _quantities[item.id] ?? 1.0;
+                                  return {
+                                    'productId': item.id,
+                                    'productName': item.name,
+                                    'quantity': qty,
+                                    'unitPrice': item.sellPrice,
+                                    'total': item.sellPrice * qty,
+                                  };
+                                }).toList(),
+                              );
+
+                              if (saleResult != null) {
+                                // Invalidate sales metrics to force refresh
+                                ref.invalidate(salesSummaryProvider);
+                                ref.invalidate(salesHistoryProvider(null));
+
+                                if (context.mounted) {
+                                  Navigator.pop(context); // pop the sheet
+                                  context.pushReplacement(
+                                    AppRoutes.saleSuccess,
+                                    extra: {
+                                      'invoiceNo': _invoiceNo,
+                                      'amountPaid': finalAmountPaid,
+                                      'paymentMethod': isUnpaid ? 'Credit' : selectedMethod,
+                                      'paymentStatus': _paymentStatus,
+                                      'total': calculatedTotal,
+                                      'dateTime': DateTime.now(),
+                                      'receiptData': receiptData,
+                                    },
+                                  );
+                                }
+                              } else {
+                                showGlobalToast(
+                                  message: 'Failed to record sale. Please try again.',
+                                  status: 'error',
+                                );
+                              }
+                            },
+                      child: ref.watch(salesCheckoutProvider).isLoading
+                          ? SizedBox(
+                              width: 20.w,
+                              height: 20.w,
+                              child: const CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              isUnpaid ? 'Confirm Debt / Unpaid Sale' : 'Confirm Payment',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                   SizedBox(height: 14.h),

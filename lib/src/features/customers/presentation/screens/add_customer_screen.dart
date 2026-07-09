@@ -1,8 +1,6 @@
-import 'dart:math';
 import 'package:flutter_contacts/flutter_contacts.dart' as contacts;
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-import '../../domain/entities/customer.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/widgets.dart';
 
@@ -22,15 +20,6 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   final _addressController = TextEditingController();
   final _notesController = TextEditingController();
 
-  final List<Color> _brandColors = [
-    const Color(0xFF0F2C59), // Deep Navy
-    const Color(0xFF0D9488), // Teal
-    const Color(0xFF7C3AED), // Purple
-    const Color(0xFF059669), // Emerald
-    const Color(0xFFD97706), // Amber
-    const Color(0xFF1E293B), // Slate
-  ];
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -41,7 +30,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     super.dispose();
   }
 
-  void _saveCustomer() {
+  void _saveCustomer() async {
     if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();
@@ -50,24 +39,22 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     final address = _addressController.text.trim();
     final notes = _notesController.text.trim();
 
-    // Pick random brand color for initials badge
-    final randomColor = _brandColors[Random().nextInt(_brandColors.length)];
-
-    final newCustomer = CustomerMock(
-      id: 'c_${DateTime.now().millisecondsSinceEpoch}',
+    final result = await ref.read(customerListProvider.notifier).addCustomer(
       name: name,
       phone: phone,
       email: email.isNotEmpty ? email : null,
       address: address.isNotEmpty ? address : null,
       notes: notes.isNotEmpty ? notes : null,
-      initialsColor: randomColor,
     );
 
-    // Save using Riverpod notifier with explicit generic type argument
-    ref.read<CustomerListNotifier>(customerListProvider.notifier).addCustomer(newCustomer);
+    if (!mounted) return;
 
-    showGlobalToast(message: 'Customer saved successfully!');
-    context.pop();
+    if (result != null) {
+      showGlobalToast(message: 'Customer saved successfully!');
+      context.pop(result);
+    } else {
+      showGlobalToast(message: 'Failed to save customer.', status: 'error');
+    }
   }
 
   Future<void> _importFromContacts() async {

@@ -1,30 +1,8 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 
-class SaleMock {
-  final String invoice;
-  final String paymentMethod;
-  final bool isPaid;
-  final String time;
-  final String cashier;
-  final String amount;
-  final String customer;
-  final String date;
-
-  SaleMock({
-    required this.invoice,
-    required this.paymentMethod,
-    required this.isPaid,
-    required this.time,
-    required this.cashier,
-    required this.amount,
-    required this.customer,
-    required this.date,
-  });
-}
-
 class SaleCard extends StatelessWidget {
-  final SaleMock sale;
+  final Sale sale;
 
   const SaleCard({
     super.key,
@@ -35,7 +13,7 @@ class SaleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        context.pushNamed('saleDetails', pathParameters: {'id': sale.invoice});
+        context.pushNamed('saleDetails', pathParameters: {'id': sale.id});
       },
       child: Container(
         padding: EdgeInsets.all(12.w),
@@ -114,14 +92,19 @@ class SaleCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${sale.time} • ${sale.cashier}',
-                style: TextStyle(
-                  color: const Color(0xFF64748B),
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  '${sale.time} • ${sale.cashier}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: const Color(0xFF64748B),
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
+              SizedBox(width: 8.w),
               Text(
                 sale.amount,
                 style: TextStyle(
@@ -141,25 +124,33 @@ class SaleCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.person_outline_rounded,
-                    size: 13.sp,
-                    color: const Color(0xFF94A3B8),
-                  ),
-                  SizedBox(width: 4.w),
-                  Text(
-                    'Customer: ${sale.customer}',
-                    style: TextStyle(
-                      color: const Color(0xFF64748B),
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w500,
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.person_outline_rounded,
+                      size: 13.sp,
+                      color: const Color(0xFF94A3B8),
                     ),
-                  ),
-                ],
+                    SizedBox(width: 4.w),
+                    Expanded(
+                      child: Text(
+                        'Customer: ${sale.customer}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: const Color(0xFF64748B),
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              SizedBox(width: 8.w),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.access_time_rounded,

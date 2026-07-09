@@ -43,7 +43,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     maintainAnimation: true,
                     maintainState: true,
                     child: TextButton(
-                      onPressed: () => context.go(AppRoutes.login),
+                      onPressed: () {
+                        StorageService.instance.setBool('has_seen_onboarding', true);
+                        context.go(AppRoutes.login);
+                      },
                       child: Text(
                         'Skip',
                         style: TextStyle(
@@ -141,6 +144,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           curve: Curves.easeInOut,
                         );
                       } else {
+                        StorageService.instance.setBool('has_seen_onboarding', true);
                         context.go(AppRoutes.login);
                       }
                     },

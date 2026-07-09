@@ -1,6 +1,5 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-import '../../domain/entities/customer.dart';
 
 class CustomerTabsView extends StatefulWidget {
   final CustomerMock customer;
@@ -132,65 +131,76 @@ class _CustomerTabsViewState extends State<CustomerTabsView> {
       children: orders.map((order) {
         final isPaid = order.status == 'PAID';
 
-        return Container(
-          width: double.infinity,
-          margin: EdgeInsets.only(bottom: 12.h),
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-            border: Border.all(color: const Color(0xFFF1F5F9)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Icon
-              Container(
-                width: 48.w,
-                height: 48.w,
-                decoration: BoxDecoration(
-                  color: isPaid ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-                  shape: BoxShape.circle,
+        return GestureDetector(
+          onTap: () {
+            context.pushNamed(
+              'saleDetails',
+              pathParameters: {'id': order.id},
+            );
+          },
+          child: Container(
+            width: double.infinity,
+            margin: EdgeInsets.only(bottom: 12.h),
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20.r),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
-                child: Center(
-                  child: Icon(
-                    isPaid ? Icons.shopping_bag_rounded : Icons.money_off_rounded,
-                    color: isPaid ? const Color(0xFF059669) : const Color(0xFFDC2626),
-                    size: 20.sp,
+              ],
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Icon
+                Container(
+                  width: 48.w,
+                  height: 48.w,
+                  decoration: BoxDecoration(
+                    color: isPaid ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      isPaid ? Icons.shopping_bag_rounded : Icons.money_off_rounded,
+                      color: isPaid ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                      size: 20.sp,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: 16.w),
-
-              // Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          order.id,
-                          style: TextStyle(
-                            color: const Color(0xFF0F172A),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14.sp,
+                SizedBox(width: 16.w),
+  
+                // Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              order.invoiceNo,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: const Color(0xFF0F172A),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14.sp,
+                              ),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-                          decoration: BoxDecoration(
-                            color: isPaid ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
-                            borderRadius: BorderRadius.circular(6.r),
-                          ),
+                          SizedBox(width: 8.w),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                            decoration: BoxDecoration(
+                              color: isPaid ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
                           child: Text(
                             order.status,
                             style: TextStyle(
@@ -204,7 +214,7 @@ class _CustomerTabsViewState extends State<CustomerTabsView> {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      '${order.itemsCount} ${order.itemsCount == 1 ? 'item' : 'items'} • ${order.date}',
+                      '${order.itemsCount} ${order.itemsCount == 1 ? 'item' : 'items'} • ${DateFormat('MMM dd, yyyy HH:mm').format(order.date)}',
                       style: TextStyle(
                         color: const Color(0xFF64748B),
                         fontWeight: FontWeight.w500,
@@ -217,22 +227,23 @@ class _CustomerTabsViewState extends State<CustomerTabsView> {
 
               // Amount
               Text(
-                '₦${order.amount}',
+                '₦${NumberFormat('#,###').format(order.amount)}',
                 style: TextStyle(
                   color: isPaid ? const Color(0xFF0F172A) : const Color(0xFFDC2626),
                   fontWeight: FontWeight.w900,
-                  fontSize: 15.sp,
+                  fontSize: 13.sp,
                 ),
               ),
             ],
           ),
-        );
-      }).toList(),
+        ),
+      );
+    }).toList(),
     );
   }
 
   Widget _buildDebtTab() {
-    final debtOrders = widget.customer.orders.where((o) => o.status == 'UNPAID').toList();
+    final debtOrders = widget.customer.orders.where((o) => o.status != 'PAID').toList();
 
     if (debtOrders.isEmpty) {
       return Container(
@@ -296,69 +307,79 @@ class _CustomerTabsViewState extends State<CustomerTabsView> {
         ),
         SizedBox(height: 16.h),
         ...debtOrders.map((order) {
-          return Container(
-            width: double.infinity,
-            margin: EdgeInsets.only(bottom: 12.h),
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20.r),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-              border: Border.all(color: const Color(0xFFF1F5F9)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48.w,
-                  height: 48.w,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFEF2F2),
-                    shape: BoxShape.circle,
+          return GestureDetector(
+            onTap: () {
+              context.pushNamed(
+                'saleDetails',
+                pathParameters: {'id': order.id},
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              margin: EdgeInsets.only(bottom: 12.h),
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Center(
-                    child: Icon(Icons.money_off_rounded, color: const Color(0xFFDC2626), size: 20.sp),
+                ],
+                border: Border.all(color: const Color(0xFFF1F5F9)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48.w,
+                    height: 48.w,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFEF2F2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(Icons.money_off_rounded, color: const Color(0xFFDC2626), size: 20.sp),
+                    ),
                   ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        order.id,
-                        style: TextStyle(
-                          color: const Color(0xFF0F172A),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14.sp,
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          order.invoiceNo,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: const Color(0xFF0F172A),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14.sp,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        order.date,
-                        style: TextStyle(
-                          color: const Color(0xFF64748B),
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w500,
+                        SizedBox(height: 4.h),
+                        Text(
+                          DateFormat('MMM dd, yyyy HH:mm').format(order.date),
+                          style: TextStyle(
+                            color: const Color(0xFF64748B),
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Text(
-                  '₦${order.amount}',
-                  style: TextStyle(
-                    color: const Color(0xFFDC2626),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15.sp,
+                  Text(
+                    '₦${NumberFormat('#,###').format(order.amount)}',
+                    style: TextStyle(
+                      color: const Color(0xFFDC2626),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13.sp,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }),

@@ -37,3 +37,12 @@ export '../features/customers/presentation/screens/customer_details_screen.dart'
 export '../features/printing/domain/entities/receipt_data.dart';
 export '../features/printing/presentation/screens/receipt_preview_screen.dart';
 export '../features/printing/presentation/widgets/widgets.dart';
+
+// Domain Entities & Repositories
+export '../features/products/domain/entities/product.dart';
+export '../features/products/domain/repositories/product_repository.dart';
+export '../features/customers/domain/entities/customer.dart';
+export '../features/customers/domain/repositories/customer_repository.dart';
+export '../features/sales/domain/entities/sale.dart';
+export '../features/sales/domain/entities/sale_item.dart';
+export '../features/sales/domain/repositories/sales_repository.dart';

@@ -1,4 +1,7 @@
 import 'package:gnade_app/src/imports/imports.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../auth/presentation/providers/session_provider.dart';
+import '../../data/repositories/product_repository_impl.dart';
 import '../widgets/inventory_item_tile.dart'; // To reuse StockStatus if needed, or we can declare it here
 
 // We will declare StockStatus here to be used feature-wide
@@ -73,167 +76,7 @@ class SupplierMock {
   });
 }
 
-class ProductMock {
-  final String id;
-  final String name;
-  final int qty;
-  final String price; // String to match existing tile price format
-  final int lowStockAt;
-  final String sku;
-  final String category;
-  final String unit;
-  final String supplier;
-  final String supplierId;
-  final String lastUpdated;
-  final DateTime? expiryDate;
-  final DateTime createdAt;
 
-  const ProductMock({
-    required this.id,
-    required this.name,
-    required this.qty,
-    required this.price,
-    required this.lowStockAt,
-    required this.sku,
-    required this.category,
-    required this.unit,
-    required this.supplier,
-    required this.supplierId,
-    required this.lastUpdated,
-    this.expiryDate,
-    required this.createdAt,
-  });
-
-  // Helper getter to calculate stock status dynamically
-  StockStatus get status {
-    if (qty == 0) return StockStatus.outOfStock;
-    if (qty <= lowStockAt) return StockStatus.low;
-    return StockStatus.inStock;
-  }
-
-  // Helper to check if it's expired
-  bool get isExpired {
-    if (expiryDate == null) return false;
-    return expiryDate!.isBefore(DateTime.now());
-  }
-}
-
-// Initial mockup list
-final _initialProducts = [
-  ProductMock(
-    id: '1',
-    name: 'Tiger bottle',
-    qty: 0,
-    price: '1,200',
-    lowStockAt: 5,
-    sku: 'BZ_Prod1',
-    category: 'Beverages',
-    unit: 'bottle',
-    supplier: 'Golden Breweries',
-    supplierId: 's2',
-    lastUpdated: 'Today, 10:15 AM',
-    createdAt: DateTime.now().subtract(const Duration(days: 4)),
-  ),
-  ProductMock(
-    id: '2',
-    name: 'Schweppes',
-    qty: 0,
-    price: '500',
-    lowStockAt: 5,
-    sku: 'BZ_Prod2',
-    category: 'Beverages',
-    unit: 'bottle',
-    supplier: 'Coca Cola Hellenic',
-    supplierId: 's3',
-    lastUpdated: 'Yesterday, 04:30 PM',
-    createdAt: DateTime.now().subtract(const Duration(days: 5)),
-  ),
-  ProductMock(
-    id: '3',
-    name: 'Burst Berry',
-    qty: 3,
-    price: '800',
-    lowStockAt: 5,
-    sku: 'BZ_Prod3',
-    category: 'Beverages',
-    unit: 'pack',
-    supplier: 'Chi Limited',
-    supplierId: 's4',
-    lastUpdated: 'Today, 11:20 AM',
-    createdAt: DateTime.now().subtract(const Duration(days: 3)),
-  ),
-  ProductMock(
-    id: '4',
-    name: '5Alive',
-    qty: 5,
-    price: '1,500',
-    lowStockAt: 10,
-    sku: 'BZ_Prod4',
-    category: 'Beverages',
-    unit: 'carton',
-    supplier: 'Chi Limited',
-    supplierId: 's4',
-    lastUpdated: 'Today, 02:10 PM',
-    createdAt: DateTime.now().subtract(const Duration(days: 2)),
-  ),
-  ProductMock(
-    id: '5',
-    name: 'Coca Cola 50cl',
-    qty: 48,
-    price: '300',
-    lowStockAt: 10,
-    sku: 'BZ_Prod5',
-    category: 'Beverages',
-    unit: 'bottle',
-    supplier: 'Coca Cola Hellenic',
-    supplierId: 's3',
-    lastUpdated: 'Today, 03:28 PM',
-    createdAt: DateTime.now().subtract(const Duration(days: 6)),
-  ),
-  ProductMock(
-    id: '6',
-    name: 'Expired Milk',
-    qty: 12,
-    price: '2,400',
-    lowStockAt: 5,
-    sku: 'BZ_Prod6',
-    category: 'Dairy',
-    unit: 'pack',
-    supplier: 'Promasidor',
-    supplierId: 's6',
-    lastUpdated: '2 days ago',
-    expiryDate: DateTime.now().subtract(const Duration(days: 2)),
-    createdAt: DateTime.now().subtract(const Duration(days: 10)),
-  ),
-  ProductMock(
-    id: '7',
-    name: 'Pepsi 50cl',
-    qty: 120,
-    price: '350',
-    lowStockAt: 15,
-    sku: 'BZ_Prod7',
-    category: 'Beverages',
-    unit: 'bottle',
-    supplier: 'Seven-Up Bottling',
-    supplierId: 's5',
-    lastUpdated: 'Today, 04:45 PM',
-    createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-  ),
-  ProductMock(
-    id: '8',
-    name: 'Can Fanta',
-    qty: 2,
-    price: '450',
-    lowStockAt: 5,
-    sku: 'BZ_Prod8',
-    category: 'Cans',
-    unit: 'Can',
-    supplier: 'Senna Atlantic',
-    supplierId: 's1',
-    lastUpdated: 'Today, 03:28 PM',
-    createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-  ),
-];
 
 // Initial mock suppliers list matching user mockup
 final _initialSuppliers = [
@@ -398,23 +241,168 @@ final productsFilterProvider = StateProvider<ProductFilterType>((ref) {
 });
 
 // Products List Provider (to allow addition/modification if needed)
-final productsListProvider = StateNotifierProvider<ProductsListNotifier, List<ProductMock>>((ref) {
-  return ProductsListNotifier();
+final productRepositoryProvider = Provider<ProductRepository>((ref) {
+  return ProductRepositoryImpl(Supabase.instance.client);
 });
 
-class ProductsListNotifier extends StateNotifier<List<ProductMock>> {
-  ProductsListNotifier() : super(_initialProducts);
+final productsListProvider = StateNotifierProvider<ProductsListNotifier, List<Product>>((ref) {
+  final repo = ref.watch(productRepositoryProvider);
+  final session = ref.watch(sessionProvider);
+  final businessId = session.user?.businessId;
+  return ProductsListNotifier(repo, businessId);
+});
 
-  void addProduct(ProductMock product) {
-    state = [...state, product];
+class ProductsListNotifier extends StateNotifier<List<Product>> {
+  final ProductRepository _repository;
+  final String? _businessId;
+
+  ProductsListNotifier(this._repository, this._businessId) : super([]) {
+    loadProducts();
+  }
+
+  Future<void> loadProducts() async {
+    if (_businessId == null) return;
+    final result = await _repository.getProducts(_businessId);
+    result.fold(
+      (failure) => AppLogger.error('Failed to load products: ${failure.message}'),
+      (products) => state = products,
+    );
+  }
+
+  Future<Product?> addProduct({
+    required String name,
+    required String sku,
+    required String category,
+    required double costPrice,
+    required double sellPrice,
+    required double quantity,
+    required double lowStockAt,
+    required String unit,
+    DateTime? expiryDate,
+  }) async {
+    if (_businessId == null) return null;
+    final result = await _repository.createProduct(
+      businessId: _businessId,
+      name: name,
+      sku: sku,
+      category: category,
+      costPrice: costPrice,
+      sellPrice: sellPrice,
+      quantity: quantity,
+      lowStockAt: lowStockAt,
+      unit: unit,
+      expiryDate: expiryDate,
+    );
+    return result.fold(
+      (failure) {
+        AppLogger.error('Failed to create product: ${failure.message}');
+        return null;
+      },
+      (newProduct) {
+        state = [...state, newProduct];
+        return newProduct;
+      },
+    );
+  }
+
+  Future<Product?> updateProduct({
+    required String productId,
+    required String name,
+    required String sku,
+    required String category,
+    required double costPrice,
+    required double sellPrice,
+    required double quantity,
+    required double lowStockAt,
+    required String unit,
+    DateTime? expiryDate,
+  }) async {
+    final result = await _repository.updateProduct(
+      productId: productId,
+      name: name,
+      sku: sku,
+      category: category,
+      costPrice: costPrice,
+      sellPrice: sellPrice,
+      quantity: quantity,
+      lowStockAt: lowStockAt,
+      unit: unit,
+      expiryDate: expiryDate,
+    );
+    return result.fold(
+      (failure) {
+        AppLogger.error('Failed to update product: ${failure.message}');
+        return null;
+      },
+      (updatedProduct) {
+        state = [
+          for (final p in state)
+            if (p.id == productId) updatedProduct else p
+        ];
+        return updatedProduct;
+      },
+    );
   }
 }
+
+// Categories List Provider
+final categoriesProvider = StateNotifierProvider<CategoriesNotifier, AsyncValue<List<String>>>((ref) {
+  final repo = ref.watch(productRepositoryProvider);
+  final session = ref.watch(sessionProvider);
+  final businessId = session.user?.businessId;
+  return CategoriesNotifier(repo, businessId);
+});
+
+class CategoriesNotifier extends StateNotifier<AsyncValue<List<String>>> {
+  final ProductRepository _repository;
+  final String? _businessId;
+
+  CategoriesNotifier(this._repository, this._businessId) : super(const AsyncValue.loading()) {
+    loadCategories();
+  }
+
+  Future<void> loadCategories() async {
+    if (_businessId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    state = const AsyncValue.loading();
+    final result = await _repository.getCategories(_businessId);
+    result.fold(
+      (failure) => state = AsyncValue.error(failure, StackTrace.current),
+      (categories) => state = AsyncValue.data(categories),
+    );
+  }
+
+  Future<String?> addCategory(String name) async {
+    if (_businessId == null) return null;
+    final result = await _repository.createCategory(_businessId, name);
+    return result.fold(
+      (failure) {
+        AppLogger.error('Failed to create category: ${failure.message}');
+        return null;
+      },
+      (newCategory) {
+        state.whenData((list) {
+          if (!list.contains(newCategory)) {
+            state = AsyncValue.data([...list, newCategory]);
+          }
+        });
+        return newCategory;
+      },
+    );
+  }
+}
+
+// Category Filter Provider
+final selectedCategoryFilterProvider = StateProvider<String?>((ref) => null);
 
 // Filtered and Sorted Products Provider
 final filteredSortedProductsProvider = Provider<List<ProductMock>>((ref) {
   final products = ref.watch(productsListProvider);
   final filter = ref.watch(productsFilterProvider);
   final sortType = ref.watch(productsSortProvider);
+  final selectedCategory = ref.watch(selectedCategoryFilterProvider);
 
   // 1. Filter
   List<ProductMock> result = products;
@@ -422,6 +410,10 @@ final filteredSortedProductsProvider = Provider<List<ProductMock>>((ref) {
     result = products.where((p) => p.isExpired).toList();
   } else if (filter == ProductFilterType.lowStock) {
     result = products.where((p) => p.status == StockStatus.low || p.status == StockStatus.outOfStock).toList();
+  }
+
+  if (selectedCategory != null) {
+    result = result.where((p) => p.category.toLowerCase() == selectedCategory.toLowerCase()).toList();
   }
 
 

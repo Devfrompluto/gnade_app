@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:gnade_app/src/imports/imports.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import '../../../../services/pdf_generator_service.dart';
 
 class A4ReceiptActions extends StatelessWidget {
   final ReceiptData data;
@@ -24,8 +28,17 @@ class A4ReceiptActions extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              onPressed: () {
-                showGlobalToast(message: 'Generating A4 PDF Document...');
+              onPressed: () async {
+                try {
+                  showGlobalToast(message: 'Generating PDF receipt...');
+                  final pdfBytes = await PdfGeneratorService.instance.generateA4Receipt(data);
+                  await Printing.layoutPdf(
+                    onLayout: (PdfPageFormat format) async => pdfBytes,
+                    name: 'Receipt_${data.invoiceNo}',
+                  );
+                } catch (e) {
+                  showGlobalToast(message: 'Failed to generate PDF.', status: 'error');
+                }
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -61,15 +74,22 @@ class A4ReceiptActions extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              onPressed: () {
-                // Trigger Share Mock using share_plus
-                final shareText =
-                    'Invoice #${data.invoiceNo} for ${data.customerName}\n'
-                    'Total due: ₦${data.total.toStringAsFixed(0)}\n'
-                    'Thank you for shopping at ${data.businessName}!';
-                SharePlus.instance.share(
-                  ShareParams(text: shareText),
-                );
+              onPressed: () async {
+                try {
+                  showGlobalToast(message: 'Preparing PDF to share...');
+                  final pdfBytes = await PdfGeneratorService.instance.generateA4Receipt(data);
+                  final tempDir = await getTemporaryDirectory();
+                  final file = File('${tempDir.path}/Receipt_${data.invoiceNo}.pdf');
+                  await file.writeAsBytes(pdfBytes);
+
+
+                  await ShareService.instance.shareFiles(
+                    [file.path],
+                    subject: 'Invoice Receipt #${data.invoiceNo}',
+                  );
+                } catch (e) {
+                  showGlobalToast(message: 'Failed to share receipt.', status: 'error');
+                }
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,

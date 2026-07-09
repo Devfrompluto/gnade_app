@@ -1,6 +1,5 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-import 'product_item_tile.dart';
 
 class CartItemTile extends StatefulWidget {
   final ProductItemMock item;

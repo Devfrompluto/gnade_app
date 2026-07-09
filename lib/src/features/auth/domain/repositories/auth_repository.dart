@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/utils/utils.dart';
 import 'package:gnade_app/src/features/auth/domain/entities/user.dart';
+import 'package:gnade_app/src/features/auth/domain/entities/business_profile.dart';
 
 abstract class AuthRepository {
   /// Stream of auth state changes. Emits AppUser when authenticated, null when not.
@@ -31,5 +32,8 @@ abstract class AuthRepository {
   
   /// Check if the user is currently authenticated natively
   FutureEither<AppUser?> checkAuthState();
+
+  /// Retrieve the profile of a business by ID
+  FutureEither<BusinessProfile> getBusinessProfile(String businessId);
 }
 

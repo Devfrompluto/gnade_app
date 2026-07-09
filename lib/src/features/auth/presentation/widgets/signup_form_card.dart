@@ -29,10 +29,20 @@ class _SignupFormCardState extends State<SignupFormCard> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
+  final _confirmPasswordController = TextEditingController();
   String? _selectedCategory;
   bool _agreedToTerms = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  String _selectedDialCode = '+234';
+
+  final List<Map<String, String>> _countryCodes = const [
+    {'name': 'Nigeria', 'flag': '🇳🇬', 'code': '+234'},
+    {'name': 'Kenya', 'flag': '🇰🇪', 'code': '+254'},
+    {'name': 'Ghana', 'flag': '🇬🇭', 'code': '+233'},
+    {'name': 'South Africa', 'flag': '🇿🇦', 'code': '+27'},
+    {'name': 'Rwanda', 'flag': '🇷🇼', 'code': '+250'},
+  ];
 
   final List<String> _categories = const [
     'Retail',
@@ -54,6 +64,7 @@ class _SignupFormCardState extends State<SignupFormCard> {
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -74,7 +85,7 @@ class _SignupFormCardState extends State<SignupFormCard> {
       name: _nameController.text.trim(),
       businessName: _businessNameController.text.trim(),
       businessCategory: _selectedCategory ?? 'Other',
-      phoneNumber: _phoneController.text.trim(),
+      phoneNumber: AppUtils.formatE164(_selectedDialCode, _phoneController.text.trim()),
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
@@ -174,9 +185,54 @@ class _SignupFormCardState extends State<SignupFormCard> {
               enabled: !widget.isLoading,
               label: 'Phone Number',
               keyboardType: TextInputType.phone,
+              prefixIcon: Container(
+                margin: EdgeInsets.only(right: 8.w),
+                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: BorderSide(
+                      color: cs.outlineVariant.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedDialCode,
+                    isDense: true,
+                    alignment: Alignment.center,
+                    style: tt.bodyMedium?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    items: _countryCodes.map((c) {
+                      return DropdownMenuItem<String>(
+                        value: c['code'],
+                        child: Text(
+                          '${c['flag']} ${c['code']}',
+                          style: TextStyle(fontSize: 14.sp),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: widget.isLoading
+                        ? null
+                        : (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedDialCode = val;
+                              });
+                            }
+                          },
+                  ),
+                ),
+              ),
               validator: (v) {
                 if (AppUtils.isBlank(v)) {
                   return 'Phone number is required'.tr();
+                }
+                final combined = AppUtils.formatE164(_selectedDialCode, v!.trim());
+                if (!AppUtils.isPhoneNumber(combined)) {
+                  return 'Invalid phone number'.tr();
                 }
                 return null;
               },
@@ -222,6 +278,33 @@ class _SignupFormCardState extends State<SignupFormCard> {
                 }
                 if (v!.length < 6) {
                   return 'Password must be at least 6 characters'.tr();
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: 16.h),
+
+            // Confirm Password Input
+            AppTextField(
+              controller: _confirmPasswordController,
+              enabled: !widget.isLoading,
+              label: 'Confirm Password',
+              obscureText: _obscureConfirmPassword,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureConfirmPassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                ),
+                onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+              ),
+              validator: (v) {
+                if (AppUtils.isBlank(v)) {
+                  return 'Please confirm your password'.tr();
+                }
+                if (v != _passwordController.text) {
+                  return 'Passwords do not match'.tr();
                 }
                 return null;
               },

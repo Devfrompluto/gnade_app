@@ -62,7 +62,7 @@ class SaleSuccessScreen extends StatelessWidget {
             color: colorScheme.onSurface,
             size: 22.sp,
           ),
-          onPressed: () => context.go(AppRoutes.selectItem),
+          onPressed: () => context.go(AppRoutes.dashboard),
         ),
         title: Text(
           'Transaction Complete',

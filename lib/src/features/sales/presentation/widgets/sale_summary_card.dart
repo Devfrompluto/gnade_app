@@ -2,12 +2,17 @@ import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 
 class SaleSummaryCard extends StatelessWidget {
-  final String paymentStatus;
+  final Sale sale;
 
-  const SaleSummaryCard({super.key, required this.paymentStatus});
+  const SaleSummaryCard({super.key, required this.sale});
 
   @override
   Widget build(BuildContext context) {
+    final rawStatus = sale.status.toLowerCase();
+    final String paymentStatus = rawStatus == 'paid' 
+        ? 'Paid' 
+        : (rawStatus == 'partial' ? 'Partial' : 'Unpaid');
+
     final bool isPaid = paymentStatus == 'Paid';
     final bool isPartial = paymentStatus == 'Partial';
 
@@ -23,6 +28,17 @@ class SaleSummaryCard extends StatelessWidget {
             ? const Color(0xFFD97706)
             : const Color(0xFFDC2626);
 
+    String displayPaymentMethod = sale.paymentMethod;
+    if (displayPaymentMethod.toLowerCase() == 'cash') {
+      displayPaymentMethod = 'Cash';
+    } else if (displayPaymentMethod.toLowerCase() == 'bank' || displayPaymentMethod.toLowerCase() == 'transfer') {
+      displayPaymentMethod = 'Bank Transfer';
+    } else if (displayPaymentMethod.toLowerCase() == 'mobile') {
+      displayPaymentMethod = 'Mobile Payment';
+    } else if (displayPaymentMethod.toLowerCase() == 'credit') {
+      displayPaymentMethod = 'Credit / Debt';
+    }
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -32,32 +48,38 @@ class SaleSummaryCard extends StatelessWidget {
       child: Column(
         children: [
           // Invoice Header
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F3FF),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(11.r)),
-              border: const Border(
-                bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          GestureDetector(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: sale.invoiceNo));
+              showGlobalToast(message: 'Invoice number copied to clipboard!');
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F3FF),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(11.r)),
+                border: const Border(
+                  bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '# BZ08252819',
-                  style: TextStyle(
-                    color: const Color(0xFF64748B),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12.sp,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '# ${sale.invoiceNo}',
+                    style: TextStyle(
+                      color: const Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.sp,
+                    ),
                   ),
-                ),
-                Icon(
-                  Icons.copy_outlined,
-                  color: const Color(0xFF3B82F6),
-                  size: 16.sp,
-                ),
-              ],
+                  Icon(
+                    Icons.copy_outlined,
+                    color: const Color(0xFF3B82F6),
+                    size: 16.sp,
+                  ),
+                ],
+              ),
             ),
           ),
           
@@ -66,15 +88,15 @@ class SaleSummaryCard extends StatelessWidget {
             padding: EdgeInsets.all(16.w),
             child: Column(
               children: [
-                _buildDetailRow('Date', 'Jun 17, 2026 17:45'),
+                _buildDetailRow('Date', DateFormat('MMM dd, yyyy HH:mm').format(sale.createdAt)),
                 SizedBox(height: 14.h),
                 _buildCustomerRow(isPaid: isPaid),
                 SizedBox(height: 14.h),
                 _buildDetailRowWithPill('Sale status', paymentStatus, statusBg, statusText),
                 SizedBox(height: 14.h),
-                _buildDetailRow('Payment method', isPaid ? 'Bank Transfer' : 'None', isValueGray: true),
+                _buildDetailRow('Payment method', displayPaymentMethod, isValueGray: false),
                 SizedBox(height: 14.h),
-                _buildDetailRow('Staff', 'gnade', isValueBold: true),
+                _buildDetailRow('Staff', sale.cashier, isValueBold: true),
               ],
             ),
           ),
@@ -96,7 +118,7 @@ class SaleSummaryCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '₦ ${(isPaid ? 0 : 105887.50).toStringAsFixed(2)}',
+                  '₦ ${sale.balanceDue.toStringAsFixed(2)}',
                   style: TextStyle(
                     color: isPaid ? const Color(0xFF10B981) : const Color(0xFFDC2626),
                     fontWeight: FontWeight.w800,
@@ -143,7 +165,7 @@ class SaleSummaryCard extends StatelessWidget {
               SizedBox(width: 8.w),
             ],
             Text(
-              'Musa Abubakar',
+              sale.customerName,
               style: TextStyle(
                 color: const Color(0xFF0F172A),
                 fontWeight: FontWeight.w600,

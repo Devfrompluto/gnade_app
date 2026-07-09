@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:gnade_app/src/imports/imports.dart';
 import 'package:gnade_app/src/features/auth/domain/entities/user.dart';
 import 'package:gnade_app/src/features/auth/domain/repositories/auth_repository.dart';
+import 'package:gnade_app/src/features/auth/domain/entities/business_profile.dart';
 
 import 'package:gnade_app/src/features/auth/data/repositories/auth_repository_impl.dart';
 
@@ -76,7 +77,11 @@ class SessionNotifier extends StateNotifier<SessionState> {
     // Listen for future changes
     _authSub = _repository.onAuthStateChanged.listen((user) {
       if (user != null) {
-        state = SessionState(status: SessionStatus.authenticated, user: user);
+        if (!user.isInitialized) {
+          state = SessionState(status: SessionStatus.incomplete, user: user);
+        } else {
+          state = SessionState(status: SessionStatus.authenticated, user: user);
+        }
       } else {
         state = const SessionState(status: SessionStatus.unauthenticated);
       }
@@ -94,3 +99,20 @@ class SessionNotifier extends StateNotifier<SessionState> {
     super.dispose();
   }
 }
+
+final businessProfileProvider = FutureProvider<BusinessProfile?>((ref) async {
+  final sessionState = ref.watch(sessionProvider);
+  final businessId = sessionState.user?.businessId;
+
+  if (businessId == null || businessId.isEmpty) {
+    return null;
+  }
+
+  final repo = ref.read(authRepositoryProvider);
+  final result = await repo.getBusinessProfile(businessId);
+
+  return result.fold(
+    (failure) => throw failure,
+    (data) => data,
+  );
+});

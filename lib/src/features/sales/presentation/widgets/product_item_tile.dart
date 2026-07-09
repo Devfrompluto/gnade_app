@@ -1,25 +1,7 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 
-class ProductItemMock {
-  final String id;
-  final String name;
-  final String category;
-  final String initials;
-  final Color initialsColor;
-  final int quantityInStock;
-  final double price;
 
-  ProductItemMock({
-    required this.id,
-    required this.name,
-    required this.category,
-    required this.initials,
-    required this.initialsColor,
-    required this.quantityInStock,
-    required this.price,
-  });
-}
 
 class ProductItemTile extends StatelessWidget {
   final ProductItemMock product;

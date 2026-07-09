@@ -1,6 +1,5 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-import '../../domain/entities/customer.dart';
 
 class CustomerHorizontalMetrics extends StatelessWidget {
   final List<CustomerMock> customers;
@@ -36,23 +35,22 @@ class CustomerHorizontalMetrics extends StatelessWidget {
         children: [
           // TOTAL CUSTOMERS CARD
           _buildMetricCard(
-            title: 'Total',
-            value: '1,248',
-            subtext: '+12 this week',
+            title: 'Total Customers',
+            value: NumberFormat('#,###').format(customers.length),
+            subtext: 'Registered profiles',
             bgColor: const Color(0xFFEFF6FF), // soft blue
             textColor: const Color(0xFF1E3A8A), // dark blue
-            subtextColor: const Color(0xFF10B981), // green
+            subtextColor: const Color(0xFF64748B), // slate gray
             icon: Icons.group_outlined,
             iconColor: const Color(0xFF3B82F6),
-            isTrendUp: true,
           ),
           SizedBox(width: 12.w),
 
           // OWED CARD
           _buildMetricCard(
             title: 'OWED',
-            value: '₦${NumberFormat('#,###').format(totalOwed == 0 ? 45000 : totalOwed)}',
-            subtext: 'From ${debtorCount == 0 ? 14 : debtorCount} customers',
+            value: '₦${NumberFormat('#,###').format(totalOwed)}',
+            subtext: 'From $debtorCount debtors',
             bgColor: const Color(0xFFFEF2F2), // soft red
             textColor: const Color(0xFF991B1B), // dark red
             subtextColor: const Color(0xFF64748B), // grey
@@ -61,11 +59,11 @@ class CustomerHorizontalMetrics extends StatelessWidget {
           ),
           SizedBox(width: 12.w),
 
-          // DEBT (DEPOSIT) CARD
+          // DEPOSIT CARD
           _buildMetricCard(
-            title: 'DEBT',
-            value: '₦${NumberFormat('#,###').format(totalDeposits == 0 ? 5000 : totalDeposits)}',
-            subtext: 'From ${depositorCount == 0 ? 2 : depositorCount} depositors',
+            title: 'DEPOSIT',
+            value: '₦${NumberFormat('#,###').format(totalDeposits)}',
+            subtext: 'From $depositorCount depositors',
             bgColor: const Color(0xFFECFDF5), // soft green
             textColor: const Color(0xFF047857), // dark green
             subtextColor: const Color(0xFF047857), // green
@@ -126,6 +124,8 @@ class CustomerHorizontalMetrics extends StatelessWidget {
           const Spacer(),
           Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: textColor,
               fontWeight: FontWeight.w900,

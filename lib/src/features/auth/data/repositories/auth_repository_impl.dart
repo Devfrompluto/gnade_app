@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:gnade_app/src/features/auth/domain/entities/user.dart';
 import 'package:gnade_app/src/features/auth/domain/repositories/auth_repository.dart';
+import 'package:gnade_app/src/features/auth/domain/entities/business_profile.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthService _authService = AuthService.instance;
@@ -23,13 +25,69 @@ class AuthRepositoryImpl implements AuthRepository {
     if (AppConfig.useMockData) {
       return _mockUserStreamController.stream;
     }
-    return _authService.authStateChanges.map((userData) {
+    return _authService.authStateChanges.asyncMap((userData) async {
       if (userData == null) return null;
-      return AppUser(
-        id: userData['id'] ?? '',
-        email: userData['email'] ?? '',
-        name: userData['name'],
-        photoUrl: userData['photoUrl'],
+
+      final profileResult = await _authService.getUserProfile();
+      return profileResult.fold(
+        (_) => AppUser(
+          id: userData['id'] ?? '',
+          email: userData['email'] ?? '',
+          name: userData['name'],
+          photoUrl: userData['photoUrl'],
+        ),
+        (profile) async {
+          if (profile == null) {
+            // Try automatic background initialization using metadata stored on signup
+            final userMetadata = Supabase.instance.client.auth.currentUser?.userMetadata;
+            final bName = userMetadata?['business_name'] as String?;
+            final bCat = userMetadata?['business_category'] as String?;
+            final uPhone = userMetadata?['phone_number'] as String?;
+            final uName = userMetadata?['name'] as String? ?? userData['name'] ?? '';
+
+            if (bName != null) {
+              AppLogger.info('Orphan profile detected in stream. Initializing business...');
+              final initResult = await _authService.initializeBusiness(
+                businessName: bName,
+                businessCategory: bCat,
+                userName: uName,
+                userPhone: uPhone,
+              );
+              return initResult.fold(
+                (_) => AppUser(
+                  id: userData['id'] ?? '',
+                  email: userData['email'] ?? '',
+                  name: userData['name'],
+                  photoUrl: userData['photoUrl'],
+                ),
+                (initData) => AppUser(
+                  id: userData['id'] ?? '',
+                  email: userData['email'] ?? '',
+                  name: uName,
+                  photoUrl: userData['photoUrl'],
+                  businessId: initData['business_id'],
+                  role: initData['role'],
+                ),
+              );
+            }
+
+            return AppUser(
+              id: userData['id'] ?? '',
+              email: userData['email'] ?? '',
+              name: userData['name'],
+              photoUrl: userData['photoUrl'],
+            );
+          }
+
+          return AppUser(
+            id: userData['id'] ?? '',
+            email: userData['email'] ?? '',
+            name: profile['full_name'] ?? userData['name'],
+            photoUrl: userData['photoUrl'],
+            businessId: profile['business_id'],
+            role: profile['role'],
+          );
+        },
       );
     });
   }
@@ -61,10 +119,50 @@ class AuthRepositoryImpl implements AuthRepository {
 
         return profileResult.fold(
           (failure) => left(failure),
-          (profile) {
+          (profile) async {
             if (profile == null) {
-              // Orphaned auth user — no users row exists.
-              // Return a partial AppUser so session_provider can detect this.
+              // Try automatic background initialization using metadata stored on signup
+              final userMetadata = Supabase.instance.client.auth.currentUser?.userMetadata;
+              final bName = userMetadata?['business_name'] as String?;
+              final bCat = userMetadata?['business_category'] as String?;
+              final uPhone = userMetadata?['phone_number'] as String?;
+              final uName = userMetadata?['name'] as String? ?? userData['name'] ?? '';
+
+              if (bName != null) {
+                AppLogger.info('Orphan profile detected on login. Initializing business...');
+                final initResult = await _authService.initializeBusiness(
+                  businessName: bName,
+                  businessCategory: bCat,
+                  userName: uName,
+                  userPhone: uPhone,
+                );
+
+                return initResult.fold(
+                  (initFailure) {
+                    AppLogger.error('Auto business initialization failed: ${initFailure.message}');
+                    return right(AppUser(
+                      id: userData['id'],
+                      email: userData['email'] ?? email,
+                      name: uName,
+                      photoUrl: userData['photoUrl'],
+                    ));
+                  },
+                  (initData) {
+                    AppLogger.success('Auto business initialization succeeded!');
+                    final completedUser = AppUser(
+                      id: userData['id'],
+                      email: userData['email'] ?? email,
+                      name: uName,
+                      photoUrl: userData['photoUrl'],
+                      businessId: initData['business_id'],
+                      role: initData['role'],
+                    );
+                    return right(completedUser);
+                  },
+                );
+              }
+
+              // Return partial user if no business metadata found
               return right(AppUser(
                 id: userData['id'],
                 email: userData['email'] ?? email,
@@ -111,10 +209,16 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     // 1. Register with Supabase Auth
+    // Pass business details in metadata so we can recover them post-verification
     final authResult = await _authService.signUp(
       name: name,
       email: email,
       password: password,
+      metadata: {
+        'business_name': businessName,
+        'business_category': businessCategory,
+        'phone_number': phoneNumber,
+      },
     );
 
     return authResult.fold(
@@ -122,6 +226,14 @@ class AuthRepositoryImpl implements AuthRepository {
       (userData) async {
         if (userData == null) {
           return left(const ServerFailure('Sign up failed: User record not created'));
+        }
+
+        // Check if email verification is required (session is null)
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session == null) {
+          return left(const EmailVerificationRequiredFailure(
+            'A verification email has been sent. Please confirm your email address and log in.',
+          ));
         }
 
         // 2. Call initialize_business RPC to atomically create business + user rows
@@ -134,8 +246,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
         return initResult.fold(
           (failure) {
-            // Auth user was created but business init failed.
-            // Return partial user — session_provider will detect orphan state.
             AppLogger.error(
               'Business initialization failed after sign up: ${failure.message}',
             );
@@ -203,9 +313,42 @@ class AuthRepositoryImpl implements AuthRepository {
               photoUrl: userData['photoUrl'],
             ));
           },
-          (profile) {
+          (profile) async {
             if (profile == null) {
-              // Orphaned auth user — session exists but no users row
+              // Try automatic background initialization using metadata stored on signup
+              final userMetadata = Supabase.instance.client.auth.currentUser?.userMetadata;
+              final bName = userMetadata?['business_name'] as String?;
+              final bCat = userMetadata?['business_category'] as String?;
+              final uPhone = userMetadata?['phone_number'] as String?;
+              final uName = userMetadata?['name'] as String? ?? userData['name'] ?? '';
+
+              if (bName != null) {
+                AppLogger.info('Orphan profile detected on session restore. Initializing business...');
+                final initResult = await _authService.initializeBusiness(
+                  businessName: bName,
+                  businessCategory: bCat,
+                  userName: uName,
+                  userPhone: uPhone,
+                );
+                return initResult.fold(
+                  (_) => right(AppUser(
+                    id: userData['id'],
+                    email: userData['email'] ?? '',
+                    name: uName,
+                    photoUrl: userData['photoUrl'],
+                  )),
+                  (initData) => right(AppUser(
+                    id: userData['id'],
+                    email: userData['email'] ?? '',
+                    name: uName,
+                    photoUrl: userData['photoUrl'],
+                    businessId: initData['business_id'],
+                    role: initData['role'],
+                  )),
+                );
+              }
+
+              // Return partial user if no business metadata found
               return right(AppUser(
                 id: userData['id'],
                 email: userData['email'] ?? '',
@@ -224,6 +367,32 @@ class AuthRepositoryImpl implements AuthRepository {
             ));
           },
         );
+      },
+    );
+  }
+
+  @override
+  FutureEither<BusinessProfile> getBusinessProfile(String businessId) async {
+    if (AppConfig.useMockData) {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      return right(BusinessProfile(
+        id: businessId,
+        name: 'Gnade Multiconcept Mock',
+        category: 'Retail / FMCG',
+        phone: '+234 801 234 5678',
+        address: '15 Trade Route Rd, Lagos',
+        currency: 'NGN',
+      ));
+    }
+
+    final result = await _authService.getBusinessProfile(businessId);
+    return result.fold(
+      (failure) => left(failure),
+      (data) {
+        if (data == null) {
+          return left(const ServerFailure('Business profile not found'));
+        }
+        return right(BusinessProfile.fromMap(data));
       },
     );
   }

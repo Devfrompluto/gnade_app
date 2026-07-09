@@ -1,14 +1,17 @@
 import 'package:go_router/go_router.dart';
 import 'package:gnade_app/src/imports/core_imports.dart';
-import 'package:gnade_app/src/features/sales/presentation/widgets/product_item_tile.dart';
 import 'package:gnade_app/src/features/sales/presentation/screens/sale_success_screen.dart';
 import 'package:gnade_app/src/features/sales/presentation/screens/sale_details_screen.dart';
 import 'package:gnade_app/src/features/customers/presentation/screens/select_customer_screen.dart';
 import 'package:gnade_app/src/features/customers/presentation/screens/add_customer_screen.dart';
+import '../features/products/presentation/screens/add_product_screen.dart';
+import '../features/products/presentation/screens/edit_product_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: AppRoutes.onboarding,
+  initialLocation: (StorageService.instance.getBool('has_seen_onboarding') ?? false)
+      ? AppRoutes.login
+      : AppRoutes.onboarding,
   routes: <RouteBase>[
     GoRoute(
       path: AppRoutes.onboarding,
@@ -137,6 +140,21 @@ final GoRouter appRouter = GoRouter(
               name: 'products',
               builder: (context, state) => const ProductsScreen(),
               routes: [
+                GoRoute(
+                  path: 'add',
+                  name: 'addProduct',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const AddProductScreen(),
+                ),
+                GoRoute(
+                  path: 'edit',
+                  name: 'editProduct',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final product = state.extra as Product;
+                    return EditProductScreen(product: product);
+                  },
+                ),
                 GoRoute(
                   path: 'details/:id',
                   name: 'productDetails',

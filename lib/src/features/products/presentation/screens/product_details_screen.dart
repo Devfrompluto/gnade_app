@@ -20,11 +20,11 @@ class ProductDetailsScreen extends ConsumerWidget {
     );
 
     // Stock alert logic
-    Color alertBgColor;
-    Color alertBorderColor;
-    Color alertTextColor;
-    IconData alertIcon;
-    String alertText;
+    Color alertBgColor = const Color(0xFFECFDF5);
+    Color alertBorderColor = const Color(0xFFD1FAE5);
+    Color alertTextColor = const Color(0xFF059669);
+    IconData alertIcon = Icons.check_circle_outline_rounded;
+    String alertText = 'In stock (Good quantity)';
 
     switch (product.status) {
       case StockStatus.outOfStock:
@@ -55,6 +55,19 @@ class ProductDetailsScreen extends ConsumerWidget {
       appBar: AppCustomAppBar(
         title: 'Product details',
         onBackPressed: () => context.pop(),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.edit_outlined,
+              color: const Color(0xFF0F172A),
+              size: 20.sp,
+            ),
+            onPressed: () {
+              context.push(AppRoutes.editProduct, extra: product);
+            },
+          ),
+          SizedBox(width: 8.w),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),

@@ -17,6 +17,7 @@ class ReceiptData {
   final String businessAddress;
   final String businessPhone;
   final String? businessEmail;
+  final String? businessLogoUrl;
   final String invoiceNo;
   final DateTime dateTime;
   final String customerName;
@@ -36,6 +37,7 @@ class ReceiptData {
     required this.businessAddress,
     required this.businessPhone,
     this.businessEmail,
+    this.businessLogoUrl,
     required this.invoiceNo,
     required this.dateTime,
     required this.customerName,

@@ -47,12 +47,16 @@ class AuthService {
     required String name,
     required String email,
     required String password,
+    Map<String, dynamic>? metadata,
   }) async {
     return runTask(() async {
       final response = await _supabaseClient.auth.signUp(
         email: email,
         password: password,
-        data: {'name': name},
+        data: {
+          'name': name,
+          if (metadata != null) ...metadata,
+        },
       );
       final user = response.user;
       if (user == null) return null;
@@ -79,15 +83,24 @@ class AuthService {
 
   FutureEither<Map<String, dynamic>?> getCurrentUser() async {
     return runTask(() async {
-      final session = _supabaseClient.auth.currentSession;
-      if (session == null) return null;
-      final user = session.user;
-      return {
-        'id': user.id,
-        'email': user.email,
-        'name': user.userMetadata?['name'] ?? '',
-        'photoUrl': user.userMetadata?['avatar_url'],
-      };
+      try {
+        final session = _supabaseClient.auth.currentSession;
+        if (session == null) return null;
+
+        final response = await _supabaseClient.auth.getUser();
+        final user = response.user;
+        if (user == null) return null;
+
+        return {
+          'id': user.id,
+          'email': user.email,
+          'name': user.userMetadata?['name'] ?? '',
+          'photoUrl': user.userMetadata?['avatar_url'],
+        };
+      } catch (e) {
+        await _supabaseClient.auth.signOut();
+        return null;
+      }
     });
   }
 
@@ -125,6 +138,17 @@ class AuthService {
       );
       return result;
     }, requiresNetwork: true);
+  }
+
+  FutureEither<Map<String, dynamic>?> getBusinessProfile(String businessId) async {
+    return runTask(() async {
+      final data = await _supabaseClient
+          .from('businesses')
+          .select()
+          .eq('id', businessId)
+          .single();
+      return data;
+    });
   }
 
   void dispose() {

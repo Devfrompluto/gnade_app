@@ -2,10 +2,22 @@ import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 
 class SaleProductsCard extends StatelessWidget {
-  const SaleProductsCard({super.key});
+  final List<SaleItem> items;
+  final double discount;
+  final double totalAmount;
+
+  const SaleProductsCard({
+    super.key,
+    required this.items,
+    required this.discount,
+    required this.totalAmount,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final subtotal = items.fold<double>(0, (sum, item) => sum + item.total);
+    final tax = totalAmount - (subtotal - discount);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -27,9 +39,21 @@ class SaleProductsCard extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16.h),
-            _buildProductItem('Premium Rice (50kg)', '2.0 @ 42,000', '84,000'),
-            SizedBox(height: 16.h),
-            _buildProductItem('Vegetable Oil (5L)', '3.0 @ 4,850', '14,550'),
+
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: items.length,
+              separatorBuilder: (context, index) => SizedBox(height: 16.h),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return _buildProductItem(
+                  item.productName,
+                  '${item.quantity.toDouble()} @ ${NumberFormat('#,##0').format(item.unitPrice)}',
+                  NumberFormat('#,##0').format(item.total),
+                );
+              },
+            ),
             SizedBox(height: 16.h),
             
             CustomPaint(
@@ -38,26 +62,28 @@ class SaleProductsCard extends StatelessWidget {
             ),
             SizedBox(height: 16.h),
             
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'VAT (7.5%)',
-                  style: TextStyle(
-                    color: const Color(0xFF64748B),
-                    fontSize: 12.sp,
+            if (tax > 0.01) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'VAT (7.5%)',
+                    style: TextStyle(
+                      color: const Color(0xFF64748B),
+                      fontSize: 12.sp,
+                    ),
                   ),
-                ),
-                Text(
-                  '7,337.50',
-                  style: TextStyle(
-                    color: const Color(0xFF0F172A),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12.sp,
+                  Text(
+                    NumberFormat('#,##0.00').format(tax),
+                    style: TextStyle(
+                      color: const Color(0xFF0F172A),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.sp,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

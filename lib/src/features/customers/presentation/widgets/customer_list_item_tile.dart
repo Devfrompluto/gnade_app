@@ -1,6 +1,5 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-import '../../domain/entities/customer.dart';
 
 class CustomerListItemTile extends StatelessWidget {
   final CustomerMock customer;

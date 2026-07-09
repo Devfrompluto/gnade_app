@@ -8,9 +8,13 @@ class BusinessSettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider);
-    final user = session.user;
-    final name = (user?.name != null && user!.name!.isNotEmpty) ? user.name! : 'Gnade Multiconcept';
+    final businessAsync = ref.watch(businessProfileProvider);
+    final business = businessAsync.value;
+
+    final businessName = business?.name ?? 'Gnade Multiconcept';
+    final category = business?.category ?? 'Retail / FMCG';
+    final phone = business?.phone ?? '+234 801 234 5678';
+    final address = business?.address ?? '15 Trade Route Rd,\nLagos Mainland, Lagos';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Light grey background
@@ -43,7 +47,7 @@ class BusinessSettingsScreen extends ConsumerWidget {
                   children: [
                     AppSettingsTile(
                       title: 'Business Name',
-                      subtitle: name,
+                      subtitle: businessName,
                       trailing: Icon(
                         Icons.edit_rounded,
                         color: const Color(0xFF2563EB),
@@ -53,17 +57,17 @@ class BusinessSettingsScreen extends ConsumerWidget {
                     ),
                     AppSettingsTile(
                       title: 'Business Category',
-                      subtitle: 'Retail / FMCG',
+                      subtitle: category,
                       onTap: () => showGlobalToast(message: 'Category selection coming soon!'),
                     ),
                     AppSettingsTile(
                       title: 'Contact Number',
-                      subtitle: '+234 801 234 5678',
+                      subtitle: phone,
                       onTap: () => showGlobalToast(message: 'Edit Contact Number coming soon!'),
                     ),
                     AppSettingsTile(
                       title: 'Business Address',
-                      subtitle: '15 Trade Route Rd,\nLagos Mainland, Lagos',
+                      subtitle: address,
                       onTap: () => showGlobalToast(message: 'Edit Business Address coming soon!'),
                     ),
                   ],

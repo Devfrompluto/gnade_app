@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/app.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('App should build', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     SharedPreferences.setMockInitialValues({});
+    await StorageService.instance.init();
     await EasyLocalization.ensureInitialized();
 
     await tester.pumpWidget(

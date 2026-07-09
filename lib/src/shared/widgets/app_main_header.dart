@@ -1,14 +1,25 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 
-class AppMainHeader extends StatelessWidget implements PreferredSizeWidget {
+class AppMainHeader extends ConsumerWidget implements PreferredSizeWidget {
   const AppMainHeader({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+
+    final session = ref.watch(sessionProvider);
+    final user = session.user;
+    final userName = user?.name ?? '';
+    final initials = userName.isNotEmpty
+        ? userName.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
+        : 'G';
+
+    final businessAsync = ref.watch(businessProfileProvider);
+    final businessName = businessAsync.value?.name ?? 'Gnade Multiconcept';
 
     return AppBar(
       backgroundColor: Colors.white,
@@ -18,48 +29,57 @@ class AppMainHeader extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              // Avatar
-              Container(
-                width: 30.w,
-                height: 30.w,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1E3A8A), // Dark blue
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    'G',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18.sp,
+          Expanded(
+            child: Row(
+              children: [
+                // Avatar
+                Container(
+                  width: 30.w,
+                  height: 30.w,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1E3A8A), // Dark blue
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: (initials.length > 1) ? 12.sp : 14.sp,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(width: 10.w),
+                SizedBox(width: 10.w),
 
-              // Business Switch Dropdown
-              Row(
-                children: [
-                  Text(
-                    'Gnade Multiconcept...',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: colorScheme.onSurface,
-                      fontSize: 16.sp,
-                    ),
+                // Business Switch Dropdown
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          businessName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: colorScheme.onSurface,
+                            fontSize: 16.sp,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_drop_down_rounded,
+                        color: colorScheme.onSurface,
+                        size: 24.sp,
+                      ),
+                    ],
                   ),
-                  Icon(
-                    Icons.arrow_drop_down_rounded,
-                    color: colorScheme.onSurface,
-                    size: 24.sp,
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
 
           // Notification Bell Badge

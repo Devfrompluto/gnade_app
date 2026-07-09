@@ -1,6 +1,5 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
-import '../../domain/entities/customer.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/customer_horizontal_metrics.dart';
 
@@ -83,38 +82,36 @@ class CustomersScreen extends ConsumerWidget {
 
           // 4. Scrollable List of Customers
           Expanded(
-            child: customers.isEmpty
-                ? Center(
-                    child: Text(
-                      'No customers found.',
-                      style: TextStyle(
-                        color: const Color(0xFF64748B),
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  )
-                : ListView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 80.h),
-                    children: [
-                      ...customers.map((c) => _buildCustomerTile(context, c)),
-                      SizedBox(height: 16.h),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => showGlobalToast(message: 'Loading more...'),
-                          child: Text(
-                            'Load More Customers',
-                            style: TextStyle(
-                              color: const Color(0xFF2563EB),
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13.sp,
+            child: RefreshIndicator(
+              color: const Color(0xFF1E3A8A),
+              onRefresh: () => ref.read(customerListProvider.notifier).loadCustomers(),
+              child: customers.isEmpty
+                  ? Center(
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SizedBox(
+                          height: 300.h,
+                          child: Center(
+                            child: Text(
+                              'No customers found.',
+                              style: TextStyle(
+                                color: const Color(0xFF64748B),
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    )
+                  : ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 80.h),
+                      children: [
+                        ...customers.map((c) => _buildCustomerTile(context, c)),
+                      ],
+                    ),
+            ),
           ),
         ],
       ),

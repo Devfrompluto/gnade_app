@@ -12,9 +12,13 @@ class AppConfig {
   static String get baseUrl => _getBaseUrl();
 
   static Future<void> init() async {
+    await StorageService.instance.init();
     await Supabase.initialize(
-      url: dotenv.get('SUPABASE_URL', fallback: 'https://YOUR-PROJECT.supabase.co'),
-      publishableKey: dotenv.get('SUPABASE_ANON_KEY', fallback: 'YOUR-ANON-KEY'),
+      url: dotenv.get('SUPABASE_URL',
+          fallback: 'https://YOUR-PROJECT.supabase.co'),
+      publishableKey:
+          dotenv.get('SUPABASE_ANON_KEY', fallback: 'YOUR-ANON-KEY'),
+      debug: true,
     );
     supabase = Supabase.instance.client;
     dio = Dio(
@@ -32,20 +36,22 @@ class AppConfig {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          AppLogger.info('🌐 [DIO] REQUEST[${options.method}] => PATH: ${options.path}');
+          AppLogger.info(
+              '🌐 [DIO] REQUEST[${options.method}] => PATH: ${options.path}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          AppLogger.info('✅ [DIO] RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+          AppLogger.info(
+              '✅ [DIO] RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
           return handler.next(response);
         },
         onError: (DioException e, handler) {
-          AppLogger.error('❌ [DIO] ERROR[${e.response?.statusCode}] => PATH: ${e.requestOptions.path}');
+          AppLogger.error(
+              '❌ [DIO] ERROR[${e.response?.statusCode}] => PATH: ${e.requestOptions.path}');
           return handler.next(e);
         },
       ),
     );
-
   }
 
   static String _getBaseUrl() {

@@ -28,3 +28,7 @@ class NetworkFailure extends Failure {
 class UnknownFailure extends Failure {
   const UnknownFailure(super.message, {super.error});
 }
+
+class EmailVerificationRequiredFailure extends Failure {
+  const EmailVerificationRequiredFailure(super.message, {super.error});
+}
