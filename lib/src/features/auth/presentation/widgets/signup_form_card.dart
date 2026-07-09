@@ -11,8 +11,6 @@ class SignupFormCard extends StatefulWidget {
   final bool isLoading;
   final void Function({
     required String name,
-    required String businessName,
-    required String businessCategory,
     required String phoneNumber,
     required String email,
     required String password,
@@ -25,12 +23,10 @@ class SignupFormCard extends StatefulWidget {
 class _SignupFormCardState extends State<SignupFormCard> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _businessNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String? _selectedCategory;
   bool _agreedToTerms = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -44,23 +40,9 @@ class _SignupFormCardState extends State<SignupFormCard> {
     {'name': 'Rwanda', 'flag': '🇷🇼', 'code': '+250'},
   ];
 
-  final List<String> _categories = const [
-    'Retail',
-    'Wholesale',
-    'Restaurant / Food',
-    'Services',
-    'Apparel / Fashion',
-    'Electronics',
-    'Supermarket / Grocery',
-    'Beauty / Cosmetics',
-    'Pharmacy / Healthcare',
-    'Other',
-  ];
-
   @override
   void dispose() {
     _nameController.dispose();
-    _businessNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -83,8 +65,6 @@ class _SignupFormCardState extends State<SignupFormCard> {
 
     widget.onSubmit(
       name: _nameController.text.trim(),
-      businessName: _businessNameController.text.trim(),
-      businessCategory: _selectedCategory ?? 'Other',
       phoneNumber: AppUtils.formatE164(_selectedDialCode, _phoneController.text.trim()),
       email: _emailController.text.trim(),
       password: _passwordController.text,
@@ -125,57 +105,6 @@ class _SignupFormCardState extends State<SignupFormCard> {
                 }
                 return null;
               },
-            ),
-            SizedBox(height: 16.h),
-
-            // Business Name Input
-            AppTextField(
-              controller: _businessNameController,
-              enabled: !widget.isLoading,
-              label: 'Business Name',
-              validator: (v) {
-                if (AppUtils.isBlank(v)) {
-                  return 'Business name is required'.tr();
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 16.h),
-
-            // Business Category Dropdown
-            DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
-              hint: Text(
-                'Business Category',
-                style: tt.labelMedium?.copyWith(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                ),
-              ),
-              items: _categories.map((category) {
-                return DropdownMenuItem<String>(
-                  value: category,
-                  child: Text(
-                    category,
-                    style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-                  ),
-                );
-              }).toList(),
-              onChanged: widget.isLoading
-                  ? null
-                  : (value) {
-                      setState(() {
-                        _selectedCategory = value;
-                      });
-                    },
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
-              validator: (v) => v == null ? 'Business category is required'.tr() : null,
-              decoration: InputDecoration(
-                contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                isDense: true,
-              ),
             ),
             SizedBox(height: 16.h),
 
@@ -365,9 +294,9 @@ class _SignupFormCardState extends State<SignupFormCard> {
             ),
             SizedBox(height: 24.h),
 
-            // Create My Shop Button
+            // Create Account Button
             AppButton(
-              label: 'Create My Shop',
+              label: 'Create Account',
               isLoading: widget.isLoading,
               isFullWidth: true,
               height: ButtonSize.medium,

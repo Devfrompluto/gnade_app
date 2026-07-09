@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:gnade_app/src/features/auth/domain/entities/user.dart';
 import 'package:gnade_app/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:gnade_app/src/features/auth/domain/entities/business_profile.dart';
+import 'package:gnade_app/src/features/auth/domain/entities/business_summary.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthService _authService = AuthService.instance;
@@ -37,45 +39,32 @@ class AuthRepositoryImpl implements AuthRepository {
           photoUrl: userData['photoUrl'],
         ),
         (profile) async {
+          final currentUser = Supabase.instance.client.auth.currentUser;
+          final activeBusinessId = currentUser?.appMetadata['active_business_id']?.toString();
+          final activeRole = currentUser?.appMetadata['active_role']?.toString();
+
           if (profile == null) {
-            // Try automatic background initialization using metadata stored on signup
-            final userMetadata = Supabase.instance.client.auth.currentUser?.userMetadata;
-            final bName = userMetadata?['business_name'] as String?;
-            final bCat = userMetadata?['business_category'] as String?;
+            final userMetadata = currentUser?.userMetadata;
             final uPhone = userMetadata?['phone_number'] as String?;
             final uName = userMetadata?['name'] as String? ?? userData['name'] ?? '';
 
-            if (bName != null) {
-              AppLogger.info('Orphan profile detected in stream. Initializing business...');
-              final initResult = await _authService.initializeBusiness(
-                businessName: bName,
-                businessCategory: bCat,
-                userName: uName,
-                userPhone: uPhone,
-              );
-              return initResult.fold(
-                (_) => AppUser(
-                  id: userData['id'] ?? '',
-                  email: userData['email'] ?? '',
-                  name: userData['name'],
-                  photoUrl: userData['photoUrl'],
-                ),
-                (initData) => AppUser(
-                  id: userData['id'] ?? '',
-                  email: userData['email'] ?? '',
-                  name: uName,
-                  photoUrl: userData['photoUrl'],
-                  businessId: initData['business_id'],
-                  role: initData['role'],
-                ),
-              );
+            try {
+              await Supabase.instance.client.from('users').upsert({
+                'id': userData['id'] ?? '',
+                'full_name': uName,
+                'phone': uPhone,
+              });
+            } catch (e) {
+              AppLogger.error('Failed to auto-upsert profile: $e');
             }
-
+            
             return AppUser(
               id: userData['id'] ?? '',
               email: userData['email'] ?? '',
-              name: userData['name'],
+              name: uName,
               photoUrl: userData['photoUrl'],
+              businessId: activeBusinessId,
+              role: activeRole,
             );
           }
 
@@ -84,8 +73,8 @@ class AuthRepositoryImpl implements AuthRepository {
             email: userData['email'] ?? '',
             name: profile['full_name'] ?? userData['name'],
             photoUrl: userData['photoUrl'],
-            businessId: profile['business_id'],
-            role: profile['role'],
+            businessId: activeBusinessId,
+            role: activeRole,
           );
         },
       );
@@ -104,7 +93,6 @@ class AuthRepositoryImpl implements AuthRepository {
       return right(_mockUser);
     }
 
-    // 1. Authenticate with Supabase Auth
     final result = await _authService.login(email: email, password: password);
 
     return result.fold(
@@ -114,60 +102,37 @@ class AuthRepositoryImpl implements AuthRepository {
           return left(const ServerFailure('Login failed: User record not found'));
         }
 
-        // 2. Fetch user profile (business_id, role) from users table
         final profileResult = await _authService.getUserProfile();
 
         return profileResult.fold(
           (failure) => left(failure),
           (profile) async {
+            final currentUser = Supabase.instance.client.auth.currentUser;
+            final activeBusinessId = currentUser?.appMetadata['active_business_id']?.toString();
+            final activeRole = currentUser?.appMetadata['active_role']?.toString();
+
             if (profile == null) {
-              // Try automatic background initialization using metadata stored on signup
-              final userMetadata = Supabase.instance.client.auth.currentUser?.userMetadata;
-              final bName = userMetadata?['business_name'] as String?;
-              final bCat = userMetadata?['business_category'] as String?;
+              final userMetadata = currentUser?.userMetadata;
               final uPhone = userMetadata?['phone_number'] as String?;
               final uName = userMetadata?['name'] as String? ?? userData['name'] ?? '';
 
-              if (bName != null) {
-                AppLogger.info('Orphan profile detected on login. Initializing business...');
-                final initResult = await _authService.initializeBusiness(
-                  businessName: bName,
-                  businessCategory: bCat,
-                  userName: uName,
-                  userPhone: uPhone,
-                );
-
-                return initResult.fold(
-                  (initFailure) {
-                    AppLogger.error('Auto business initialization failed: ${initFailure.message}');
-                    return right(AppUser(
-                      id: userData['id'],
-                      email: userData['email'] ?? email,
-                      name: uName,
-                      photoUrl: userData['photoUrl'],
-                    ));
-                  },
-                  (initData) {
-                    AppLogger.success('Auto business initialization succeeded!');
-                    final completedUser = AppUser(
-                      id: userData['id'],
-                      email: userData['email'] ?? email,
-                      name: uName,
-                      photoUrl: userData['photoUrl'],
-                      businessId: initData['business_id'],
-                      role: initData['role'],
-                    );
-                    return right(completedUser);
-                  },
-                );
+              try {
+                await Supabase.instance.client.from('users').upsert({
+                  'id': userData['id'],
+                  'full_name': uName,
+                  'phone': uPhone,
+                });
+              } catch (e) {
+                AppLogger.error('Failed to auto-upsert profile: $e');
               }
 
-              // Return partial user if no business metadata found
               return right(AppUser(
                 id: userData['id'],
                 email: userData['email'] ?? email,
-                name: userData['name'],
+                name: uName,
                 photoUrl: userData['photoUrl'],
+                businessId: activeBusinessId,
+                role: activeRole,
               ));
             }
 
@@ -176,8 +141,8 @@ class AuthRepositoryImpl implements AuthRepository {
               email: userData['email'] ?? email,
               name: profile['full_name'] ?? userData['name'],
               photoUrl: userData['photoUrl'],
-              businessId: profile['business_id'],
-              role: profile['role'],
+              businessId: activeBusinessId,
+              role: activeRole,
             ));
           },
         );
@@ -190,8 +155,6 @@ class AuthRepositoryImpl implements AuthRepository {
     required String name,
     required String email,
     required String password,
-    required String businessName,
-    required String businessCategory,
     required String phoneNumber,
   }) async {
     if (AppConfig.useMockData) {
@@ -200,23 +163,17 @@ class AuthRepositoryImpl implements AuthRepository {
         id: 'mock-user-123',
         email: email,
         name: name,
-        businessId: 'mock-business-456',
-        role: 'owner',
       );
       _currentMockUser = user;
       _mockUserStreamController.add(_currentMockUser);
       return right(user);
     }
 
-    // 1. Register with Supabase Auth
-    // Pass business details in metadata so we can recover them post-verification
     final authResult = await _authService.signUp(
       name: name,
       email: email,
       password: password,
       metadata: {
-        'business_name': businessName,
-        'business_category': businessCategory,
         'phone_number': phoneNumber,
       },
     );
@@ -228,7 +185,6 @@ class AuthRepositoryImpl implements AuthRepository {
           return left(const ServerFailure('Sign up failed: User record not created'));
         }
 
-        // Check if email verification is required (session is null)
         final session = Supabase.instance.client.auth.currentSession;
         if (session == null) {
           return left(const EmailVerificationRequiredFailure(
@@ -236,35 +192,21 @@ class AuthRepositoryImpl implements AuthRepository {
           ));
         }
 
-        // 2. Call initialize_business RPC to atomically create business + user rows
-        final initResult = await _authService.initializeBusiness(
-          businessName: businessName,
-          businessCategory: businessCategory,
-          userName: name,
-          userPhone: phoneNumber,
-        );
+        try {
+          await Supabase.instance.client.from('users').upsert({
+            'id': userData['id'],
+            'full_name': name,
+            'phone': phoneNumber,
+          });
+        } catch (e) {
+          AppLogger.error('Failed to insert user profile: $e');
+        }
 
-        return initResult.fold(
-          (failure) {
-            AppLogger.error(
-              'Business initialization failed after sign up: ${failure.message}',
-            );
-            return right(AppUser(
-              id: userData['id'],
-              email: userData['email'] ?? email,
-              name: name,
-            ));
-          },
-          (initData) {
-            return right(AppUser(
-              id: userData['id'],
-              email: userData['email'] ?? email,
-              name: name,
-              businessId: initData['business_id'],
-              role: initData['role'],
-            ));
-          },
-        );
+        return right(AppUser(
+          id: userData['id'],
+          email: userData['email'] ?? email,
+          name: name,
+        ));
       },
     );
   }
@@ -300,60 +242,49 @@ class AuthRepositoryImpl implements AuthRepository {
       (userData) async {
         if (userData == null) return right(null);
 
-        // Fetch user profile to get business_id and role
         final profileResult = await _authService.getUserProfile();
 
         return profileResult.fold(
           (failure) {
-            // Return partial user — profile fetch failed but auth session exists
+            final currentUser = Supabase.instance.client.auth.currentUser;
+            final activeBusinessId = currentUser?.appMetadata['active_business_id']?.toString();
+            final activeRole = currentUser?.appMetadata['active_role']?.toString();
             return right(AppUser(
               id: userData['id'],
               email: userData['email'] ?? '',
               name: userData['name'],
               photoUrl: userData['photoUrl'],
+              businessId: activeBusinessId,
+              role: activeRole,
             ));
           },
           (profile) async {
+            final currentUser = Supabase.instance.client.auth.currentUser;
+            final activeBusinessId = currentUser?.appMetadata['active_business_id']?.toString();
+            final activeRole = currentUser?.appMetadata['active_role']?.toString();
+
             if (profile == null) {
-              // Try automatic background initialization using metadata stored on signup
-              final userMetadata = Supabase.instance.client.auth.currentUser?.userMetadata;
-              final bName = userMetadata?['business_name'] as String?;
-              final bCat = userMetadata?['business_category'] as String?;
+              final userMetadata = currentUser?.userMetadata;
               final uPhone = userMetadata?['phone_number'] as String?;
               final uName = userMetadata?['name'] as String? ?? userData['name'] ?? '';
 
-              if (bName != null) {
-                AppLogger.info('Orphan profile detected on session restore. Initializing business...');
-                final initResult = await _authService.initializeBusiness(
-                  businessName: bName,
-                  businessCategory: bCat,
-                  userName: uName,
-                  userPhone: uPhone,
-                );
-                return initResult.fold(
-                  (_) => right(AppUser(
-                    id: userData['id'],
-                    email: userData['email'] ?? '',
-                    name: uName,
-                    photoUrl: userData['photoUrl'],
-                  )),
-                  (initData) => right(AppUser(
-                    id: userData['id'],
-                    email: userData['email'] ?? '',
-                    name: uName,
-                    photoUrl: userData['photoUrl'],
-                    businessId: initData['business_id'],
-                    role: initData['role'],
-                  )),
-                );
+              try {
+                await Supabase.instance.client.from('users').upsert({
+                  'id': userData['id'],
+                  'full_name': uName,
+                  'phone': uPhone,
+                });
+              } catch (e) {
+                AppLogger.error('Failed to auto-upsert profile: $e');
               }
 
-              // Return partial user if no business metadata found
               return right(AppUser(
                 id: userData['id'],
                 email: userData['email'] ?? '',
-                name: userData['name'],
+                name: uName,
                 photoUrl: userData['photoUrl'],
+                businessId: activeBusinessId,
+                role: activeRole,
               ));
             }
 
@@ -362,8 +293,8 @@ class AuthRepositoryImpl implements AuthRepository {
               email: userData['email'] ?? '',
               name: profile['full_name'] ?? userData['name'],
               photoUrl: userData['photoUrl'],
-              businessId: profile['business_id'],
-              role: profile['role'],
+              businessId: activeBusinessId,
+              role: activeRole,
             ));
           },
         );
@@ -394,6 +325,135 @@ class AuthRepositoryImpl implements AuthRepository {
         }
         return right(BusinessProfile.fromMap(data));
       },
+    );
+  }
+
+  @override
+  FutureEither<List<BusinessSummary>> getBusinesses() async {
+    if (AppConfig.useMockData) {
+      return right([
+        const BusinessSummary(
+          id: 'mock-business-456',
+          name: 'Gnade Multiconcept Mock',
+          category: 'Retail',
+          currency: 'NGN',
+          role: 'owner',
+          hasPin: true,
+        ),
+      ]);
+    }
+
+    final result = await _authService.getBusinesses();
+    return result.fold(
+      (failure) => left(failure),
+      (list) {
+        final summaries = list.map((item) => BusinessSummary.fromMap(item as Map<String, dynamic>)).toList();
+        return right(summaries);
+      },
+    );
+  }
+
+  @override
+  FutureEither<Map<String, dynamic>> createBusiness({
+    required String name,
+    required String category,
+    required String userName,
+    required String userPhone,
+    required String pin,
+    String? phone,
+    String? address,
+    String? logoUrl,
+  }) async {
+    if (AppConfig.useMockData) {
+      const user = AppUser(
+        id: 'mock-user-123',
+        email: 'owner@gnade.com',
+        name: 'Gnade Owner',
+        businessId: 'mock-business-456',
+        role: 'owner',
+      );
+      _currentMockUser = user;
+      _mockUserStreamController.add(_currentMockUser);
+      return right({
+        'business_id': 'mock-business-456',
+        'role': 'owner',
+      });
+    }
+
+    final result = await _authService.createBusiness(
+      name: name,
+      category: category,
+      userName: userName,
+      userPhone: userPhone,
+      pin: pin,
+    );
+
+    return result.fold(
+      (failure) => left(failure),
+      (data) async {
+        final businessId = data['business_id'] as String?;
+        if (businessId != null) {
+          if (phone != null || address != null || logoUrl != null) {
+            try {
+              await Supabase.instance.client.from('businesses').update({
+                if (phone != null) 'phone': phone,
+                if (address != null) 'address': address,
+                if (logoUrl != null) 'logo_url': logoUrl,
+              }).eq('id', businessId);
+            } catch (e) {
+              AppLogger.error('Failed to update business metadata: $e');
+            }
+          }
+        }
+        return right(data);
+      },
+    );
+  }
+
+  @override
+  FutureEither<String?> uploadLogo(File logoFile) async {
+    if (AppConfig.useMockData) {
+      return right('https://images.unsplash.com/photo-1578916171728-46686eac8d58');
+    }
+    return _authService.uploadLogo(logoFile);
+  }
+
+  @override
+  FutureEither<Map<String, dynamic>> switchBusiness({
+    required String businessId,
+    required String pin,
+  }) async {
+    if (AppConfig.useMockData) {
+      final user = AppUser(
+        id: 'mock-user-123',
+        email: 'owner@gnade.com',
+        name: 'Gnade Owner',
+        businessId: businessId,
+        role: 'owner',
+      );
+      _currentMockUser = user;
+      _mockUserStreamController.add(_currentMockUser);
+      return right({
+        'business_id': businessId,
+        'role': 'owner',
+      });
+    }
+
+    return _authService.switchBusiness(
+      businessId: businessId,
+      pin: pin,
+    );
+  }
+
+  @override
+  FutureEither<void> setBusinessPin({
+    required String businessId,
+    required String pin,
+  }) async {
+    if (AppConfig.useMockData) return right(null);
+    return _authService.setBusinessPin(
+      businessId: businessId,
+      pin: pin,
     );
   }
 }

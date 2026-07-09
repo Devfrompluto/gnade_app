@@ -57,6 +57,10 @@ class SessionNotifier extends StateNotifier<SessionState> {
     _init();
   }
 
+  Future<void> refresh() async {
+    await _init();
+  }
+
   Future<void> _init() async {
     // Check persisted session first
     final result = await _repository.checkAuthState();
@@ -65,8 +69,8 @@ class SessionNotifier extends StateNotifier<SessionState> {
       (user) {
         if (user == null) {
           state = const SessionState(status: SessionStatus.unauthenticated);
-        } else if (!user.isInitialized) {
-          // Auth session exists but no business_id — orphaned user
+        } else if (user.businessId == null || user.businessId!.isEmpty) {
+          // Logged in but has no active business selected yet
           state = SessionState(status: SessionStatus.incomplete, user: user);
         } else {
           state = SessionState(status: SessionStatus.authenticated, user: user);
@@ -77,7 +81,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
     // Listen for future changes
     _authSub = _repository.onAuthStateChanged.listen((user) {
       if (user != null) {
-        if (!user.isInitialized) {
+        if (user.businessId == null || user.businessId!.isEmpty) {
           state = SessionState(status: SessionStatus.incomplete, user: user);
         } else {
           state = SessionState(status: SessionStatus.authenticated, user: user);

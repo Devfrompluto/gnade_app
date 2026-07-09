@@ -34,6 +34,24 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(
+      path: AppRoutes.selectBusiness,
+      name: 'selectBusiness',
+      builder: (context, state) => const SelectBusinessScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.createBusiness,
+      name: 'createBusiness',
+      builder: (context, state) => const CreateBusinessScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.createPin,
+      name: 'createPin',
+      builder: (context, state) {
+        final details = state.extra as Map<String, dynamic>;
+        return CreatePinScreen(businessDetails: details);
+      },
+    ),
+    GoRoute(
       path: AppRoutes.notifications,
       name: 'notifications',
       parentNavigatorKey: rootNavigatorKey,

@@ -11,6 +11,9 @@ abstract final class AppRoutes {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
+  static const String selectBusiness = '/select-business';
+  static const String createBusiness = '/create-business';
+  static const String createPin = '/create-pin';
 
   // Shell Tabs
   static const String dashboard = '/dashboard';

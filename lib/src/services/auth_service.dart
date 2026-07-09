@@ -1,3 +1,4 @@
+import 'dart:io';
 import '../utils/utils.dart';
 import '../config/app_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -104,22 +105,91 @@ class AuthService {
     });
   }
 
-  /// Fetch the user's profile from the `users` table (business_id, role, etc.)
+  /// Fetch the user's profile from the `users` table
   FutureEither<Map<String, dynamic>?> getUserProfile() async {
     return runTask(() async {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return null;
       final data = await _supabaseClient
           .from('users')
-          .select('business_id, full_name, phone, role')
+          .select('full_name, phone')
           .eq('id', userId)
           .maybeSingle();
       return data;
     });
   }
 
+  /// Fetch all businesses a user belongs to
+  FutureEither<List<dynamic>> getBusinesses() async {
+    return runTask(() async {
+      final response = await _supabaseClient.rpc<List<dynamic>>('get_user_businesses');
+      return response;
+    }, requiresNetwork: true);
+  }
+
+  /// Create a new business and link to user
+  FutureEither<Map<String, dynamic>> createBusiness({
+    required String name,
+    required String category,
+    required String userName,
+    required String userPhone,
+    required String pin,
+  }) async {
+    return runTask(() async {
+      final result = await _supabaseClient.rpc<Map<String, dynamic>>(
+        'initialize_business',
+        params: {
+          'p_business_name': name,
+          'p_business_category': category,
+          'p_user_name': userName,
+          'p_user_phone': userPhone,
+          'p_pin': pin,
+        },
+      );
+      // Force token refresh so client picks up session updates immediately
+      await _supabaseClient.auth.refreshSession();
+      return result;
+    }, requiresNetwork: true);
+  }
+
+  /// Switch the active business by ID and verify PIN
+  FutureEither<Map<String, dynamic>> switchBusiness({
+    required String businessId,
+    required String pin,
+  }) async {
+    return runTask(() async {
+      final result = await _supabaseClient.rpc<Map<String, dynamic>>(
+        'set_active_business',
+        params: {
+          'p_business_id': businessId,
+          'p_pin': pin,
+        },
+      );
+      // Force token refresh so the client picks up the new JWT with updated app_metadata.active_business_id
+      await _supabaseClient.auth.refreshSession();
+      return result;
+    }, requiresNetwork: true);
+  }
+
+  /// Set or update the PIN for a business
+  FutureEither<void> setBusinessPin({
+    required String businessId,
+    required String pin,
+  }) async {
+    return runTask(() async {
+      await _supabaseClient.rpc<void>(
+        'update_business_pin',
+        params: {
+          'p_business_id': businessId,
+          'p_pin': pin,
+        },
+      );
+    }, requiresNetwork: true);
+  }
+
   /// Call the `initialize_business` RPC to atomically create a business + user row.
   /// Returns `{ business_id, role }` on success.
+  @Deprecated('Use createBusiness instead')
   FutureEither<Map<String, dynamic>> initializeBusiness({
     required String businessName,
     String? businessCategory,
@@ -134,6 +204,7 @@ class AuthService {
           'p_business_category': businessCategory,
           'p_user_name': userName,
           'p_user_phone': userPhone,
+          'p_pin': '',
         },
       );
       return result;
@@ -151,7 +222,18 @@ class AuthService {
     });
   }
 
+  FutureEither<String?> uploadLogo(File logoFile) async {
+    return runTask(() async {
+      final extension = logoFile.path.split('.').last;
+      final path = 'public/${DateTime.now().millisecondsSinceEpoch}_logo.$extension';
+      await _supabaseClient.storage.from('logos').upload(path, logoFile);
+      final publicUrl = _supabaseClient.storage.from('logos').getPublicUrl(path);
+      return publicUrl;
+    });
+  }
+
   void dispose() {
     // Supabase manages its own streams
   }
 }
+

@@ -14,8 +14,6 @@ class SignupScreen extends ConsumerWidget {
 
     Future<void> handleSignup({
       required String name,
-      required String businessName,
-      required String businessCategory,
       required String phoneNumber,
       required String email,
       required String password,
@@ -25,8 +23,6 @@ class SignupScreen extends ConsumerWidget {
             name: name,
             email: email,
             password: password,
-            businessName: businessName,
-            businessCategory: businessCategory,
             phoneNumber: phoneNumber,
           );
     }

@@ -1,21 +1,27 @@
+import 'dart:io';
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 
+import 'package:gnade_app/src/features/auth/domain/entities/business_summary.dart';
 import 'package:gnade_app/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 
 final authControllerProvider = StateNotifierProvider<AuthController, bool>((ref) {
   return AuthController(
     repository: ref.read(authRepositoryProvider),
+    ref: ref,
   );
 });
 
 class AuthController extends StateNotifier<bool> {
   final AuthRepository _repository;
+  final Ref _ref;
 
   AuthController({
     required AuthRepository repository,
+    required Ref ref,
   })  : _repository = repository,
+        _ref = ref,
         super(false); // loading state is false
 
   void login({required BuildContext context, required String email, required String password}) async {
@@ -43,8 +49,6 @@ class AuthController extends StateNotifier<bool> {
     required String name,
     required String email,
     required String password,
-    required String businessName,
-    required String businessCategory,
     required String phoneNumber,
   }) async {
     state = true;
@@ -53,8 +57,6 @@ class AuthController extends StateNotifier<bool> {
       name: name,
       email: email,
       password: password,
-      businessName: businessName,
-      businessCategory: businessCategory,
       phoneNumber: phoneNumber,
     );
     
@@ -108,7 +110,7 @@ class AuthController extends StateNotifier<bool> {
                         ),
                         SizedBox(height: 12.h),
                         Text(
-                          'We\'ve sent a verification link to your email address. Please click the link to confirm your account, then log in to create your shop.',
+                          'We\'ve sent a verification link to your email address. Please click the link to confirm your account, then log in to create or select your business.',
                           style: TextStyle(
                             color: const Color(0xFF64748B),
                             fontSize: 14.sp,
@@ -140,9 +142,75 @@ class AuthController extends StateNotifier<bool> {
       },
       (user) {
         if (rootContext?.mounted ?? false) {
-          rootContext!.go(AppRoutes.dashboard);
+          rootContext!.go(AppRoutes.selectBusiness);
         }
       },
+    );
+  }
+
+  Future<bool> switchBusiness({
+    required BuildContext context,
+    required String businessId,
+    required String pin,
+  }) async {
+    state = true;
+    final result = await _repository.switchBusiness(businessId: businessId, pin: pin);
+    state = false;
+    
+    return result.fold(
+      (failure) {
+        showToast(context, message: failure.message, status: 'error');
+        return false;
+      },
+      (data) async {
+        await _ref.read(sessionProvider.notifier).refresh();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> createBusiness({
+    required BuildContext context,
+    required String name,
+    required String category,
+    required String userName,
+    required String userPhone,
+    required String pin,
+    String? phone,
+    String? address,
+    String? logoUrl,
+  }) async {
+    state = true;
+    final result = await _repository.createBusiness(
+      name: name,
+      category: category,
+      userName: userName,
+      userPhone: userPhone,
+      pin: pin,
+      phone: phone,
+      address: address,
+      logoUrl: logoUrl,
+    );
+    state = false;
+
+    return result.fold(
+      (failure) {
+        showToast(context, message: failure.message, status: 'error');
+        return false;
+      },
+      (data) async {
+        showToast(context, message: 'Business created successfully!', status: 'success');
+        await _ref.read(sessionProvider.notifier).refresh();
+        return true;
+      },
+    );
+  }
+
+  Future<String?> uploadLogo(File logoFile) async {
+    final result = await _repository.uploadLogo(logoFile);
+    return result.fold(
+      (failure) => null,
+      (url) => url,
     );
   }
 
@@ -169,3 +237,13 @@ class AuthController extends StateNotifier<bool> {
     );
   }
 }
+
+final userBusinessesProvider = FutureProvider.autoDispose<List<BusinessSummary>>((ref) async {
+  final repo = ref.watch(authRepositoryProvider);
+  final result = await repo.getBusinesses();
+  return result.fold(
+    (failure) => throw failure,
+    (businesses) => businesses,
+  );
+});
+
