@@ -2,6 +2,8 @@ import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 import 'package:gnade_app/src/features/auth/presentation/providers/auth_provider.dart';
 
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -31,10 +33,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     Future<void> handleLogin() async {
       if (!(_formKey.currentState?.validate() ?? false)) return;
       
-      ref.read(authControllerProvider.notifier).login(
-        context: context, 
-        email: _emailController.text, 
-        password: _passwordController.text,
+      final result = await ref.read(authControllerProvider.notifier).login(
+        email: _emailController.text.trim(), 
+        password: _passwordController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      result.fold(
+        (failure) => showToast(context, message: failure.message, status: 'error'),
+        (user) {
+          final session = ref.read(sessionProvider);
+          if (session.status == SessionStatus.authenticated) {
+            context.go(AppRoutes.dashboard);
+          } else {
+            context.go(AppRoutes.selectBusiness);
+          }
+        },
       );
     }
 
@@ -186,57 +201,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     isFullWidth: true,
                   ),
                   
-                  SizedBox(height: AppSpacing.md.h),
-                  
-                  // Custom Or Divider
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          color: cs.outlineVariant.withValues(alpha: 0.5),
-                          thickness: 1,
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Text(
-                          'or',
-                          style: tt.bodyMedium?.copyWith(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          color: cs.outlineVariant.withValues(alpha: 0.5),
-                          thickness: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  SizedBox(height: AppSpacing.md.h),
-                  
-                  // Quick PIN Login Button
-                  AppButton(
-                    label: 'auth.quick_pin_login'.tr(),
-                    onPressed: isLoading ? null : () {
-                      showToast(context, message: 'PIN Login coming soon!', status: 'info');
-                    },
-                    variant: ButtonVariant.outline,
-                    height: ButtonSize.medium,
-                    isFullWidth: true,
-                    prefixIcon: Padding(
-                      padding: EdgeInsets.only(right: 4.w),
-                      child: Icon(
-                        Icons.dialpad_rounded,
-                        size: 20.sp,
-                        color: cs.primary,
-                      ),
-                    ),
-                  ),
-                  
-                  SizedBox(height: AppSpacing.md.h),
+                  SizedBox(height: AppSpacing.lg.h),
 
                   // Footer link to Signup Screen
                   Center(

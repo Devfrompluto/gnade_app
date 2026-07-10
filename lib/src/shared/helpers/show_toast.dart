@@ -8,9 +8,20 @@ void showToast(
   Duration? duration,
   bool? autoDismiss,
 }) {
+  var activeContext = context;
+  if (!context.mounted) {
+    final rc = rootContext;
+    if (rc != null && rc.mounted) {
+      activeContext = rc;
+    } else {
+      AppLogger.warning('Cannot show toast: no active mounted context available.');
+      return;
+    }
+  }
+
   final toastStatus = status ?? 'info';
-  final colorScheme = context.colors;
-  final appColors = context.appColors;
+  final colorScheme = activeContext.colors;
+  final appColors = activeContext.appColors;
 
   final (backgroundColor, foregroundColor, iconColor) = switch (toastStatus) {
     'error' => (
@@ -34,7 +45,7 @@ void showToast(
         appColors.info,
       ),
     _ => (
-        context.theme.scaffoldBackgroundColor,
+        activeContext.theme.scaffoldBackgroundColor,
         colorScheme.onSurface,
         colorScheme.onSurfaceVariant,
       ),
@@ -46,7 +57,7 @@ void showToast(
     toastDuration: duration ?? const Duration(seconds: 2),
     animationDuration: const Duration(milliseconds: 150),
     animationCurve: Curves.easeIn,
-    builder: (context) => ToastCard(
+    builder: (ctx) => ToastCard(
       color: backgroundColor,
       shadowColor: colorScheme.shadow.withValues(alpha: 0.05),
       leading: AppIcon(
@@ -61,14 +72,14 @@ void showToast(
       ),
       title: Text(
         message,
-        style: context.theme.textTheme.labelSmall!.copyWith(
+        style: ctx.theme.textTheme.labelSmall!.copyWith(
           fontWeight: FontWeight.w600,
           fontSize: 11.sp,
           color: foregroundColor,
         ),
       ),
     ),
-  ).show(context);
+  ).show(activeContext);
 }
 
 void showGlobalToast({

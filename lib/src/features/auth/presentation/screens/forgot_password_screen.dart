@@ -30,10 +30,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     Future<void> handleForgotPassword() async {
       if (!(_formKey.currentState?.validate() ?? false)) return;
       
+      final result = await ref.read(authControllerProvider.notifier).forgotPassword(
+        email: _emailController.text.trim(),
+      );
 
-      ref.read(authControllerProvider.notifier).forgotPassword(
-        context: context, 
-        email: _emailController.text,
+      if (!context.mounted) return;
+
+      result.fold(
+        (failure) => showToast(context, message: failure.message, status: 'error'),
+        (_) {
+          showToast(context, message: 'Password reset link sent successfully', status: 'success');
+          context.go(AppRoutes.login);
+        },
       );
     }
 

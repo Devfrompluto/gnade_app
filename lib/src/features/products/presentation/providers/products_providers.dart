@@ -442,8 +442,79 @@ final filteredSortedProductsProvider = Provider<List<ProductMock>>((ref) {
   return result;
 });
 
+class SuppliersListNotifier extends StateNotifier<List<SupplierMock>> {
+  final Ref _ref;
+
+  SuppliersListNotifier(this._ref) : super([]) {
+    loadSuppliers();
+  }
+
+  Future<void> loadSuppliers() async {
+    final session = _ref.read(sessionProvider);
+    final businessId = session.user?.businessId;
+    if (businessId == null || businessId.isEmpty) {
+      state = [];
+      return;
+    }
+
+    try {
+      final response = await Supabase.instance.client
+          .from('suppliers')
+          .select()
+          .eq('business_id', businessId)
+          .order('name', ascending: true);
+
+      final fetchedList = (response as List).map((data) {
+        return SupplierMock(
+          id: data['id']?.toString() ?? '',
+          name: data['name']?.toString() ?? '',
+          phone: data['phone']?.toString() ?? '',
+          supplyValue: data['supply_value']?.toString() ?? '0',
+          debtAmount: data['debt_amount']?.toString() ?? '0',
+          purchases: const [],
+        );
+      }).toList();
+
+      state = fetchedList.isEmpty ? _initialSuppliers : fetchedList;
+    } catch (e) {
+      state = _initialSuppliers;
+    }
+  }
+
+  Future<SupplierMock?> addSupplier(String name, String phone) async {
+    final session = _ref.read(sessionProvider);
+    final businessId = session.user?.businessId;
+    if (businessId == null || businessId.isEmpty) return null;
+
+    try {
+      final response = await Supabase.instance.client.from('suppliers').insert({
+        'business_id': businessId,
+        'name': name,
+        'phone': phone.isEmpty ? 'Not set' : phone,
+        'supply_value': 0,
+        'debt_amount': 0,
+      }).select().single();
+
+      final newSupplier = SupplierMock(
+        id: response['id']?.toString() ?? '',
+        name: response['name']?.toString() ?? '',
+        phone: response['phone']?.toString() ?? '',
+        supplyValue: '0',
+        debtAmount: '0',
+        purchases: const [],
+      );
+
+      final currentList = state == _initialSuppliers ? <SupplierMock>[] : state;
+      state = [...currentList, newSupplier];
+      return newSupplier;
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
 // Suppliers List Provider
-final suppliersListProvider = StateProvider<List<SupplierMock>>((ref) {
-  return _initialSuppliers;
+final suppliersListProvider = StateNotifierProvider<SuppliersListNotifier, List<SupplierMock>>((ref) {
+  return SuppliersListNotifier(ref);
 });
 

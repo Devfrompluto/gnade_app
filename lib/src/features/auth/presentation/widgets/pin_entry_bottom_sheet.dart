@@ -77,8 +77,7 @@ class _PinEntryBottomSheetState extends ConsumerState<PinEntryBottomSheet> with 
       _isLoading = true;
     });
 
-    final success = await ref.read(authControllerProvider.notifier).switchBusiness(
-          context: context,
+    final result = await ref.read(authControllerProvider.notifier).switchBusiness(
           businessId: widget.business.id,
           pin: _pin,
         );
@@ -88,14 +87,18 @@ class _PinEntryBottomSheetState extends ConsumerState<PinEntryBottomSheet> with 
         _isLoading = false;
       });
 
-      if (success) {
-        Navigator.pop(context, true);
-      } else {
-        setState(() {
-          _pin = '';
-        });
-        _shakeController.forward(from: 0);
-      }
+      result.fold(
+        (failure) {
+          showToast(context, message: failure.message, status: 'error');
+          setState(() {
+            _pin = '';
+          });
+          _shakeController.forward(from: 0);
+        },
+        (_) {
+          Navigator.pop(context, true);
+        },
+      );
     }
   }
 

@@ -43,6 +43,13 @@ class MoreScreen extends ConsumerWidget {
                       iconBgColor: const Color(0xFFEFF6FF),
                       onTap: () => context.push(AppRoutes.businessSettings),
                     ),
+                    MoreSettingTile(
+                      title: 'Switch Business',
+                      icon: Icons.swap_horiz_rounded,
+                      iconColor: const Color(0xFF10B981),
+                      iconBgColor: const Color(0xFFECFDF5),
+                      onTap: () => context.push(AppRoutes.selectBusiness),
+                    ),
                   ],
                 ),
 

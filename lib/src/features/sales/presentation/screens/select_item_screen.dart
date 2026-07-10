@@ -14,6 +14,15 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
   String _searchQuery = '';
   int _selectedCategoryIndex = 0; // 0: All, 1: Cans, 2: Bottles, 3: PET
   
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!await requireConnectivity()) return;
+      ref.read(productsListProvider.notifier).loadProducts();
+    });
+  }
+  
   // Track selected quantities for each product
   final Map<String, int> _selectedQuantities = {};
 

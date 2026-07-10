@@ -152,6 +152,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             child: RefreshIndicator(
               color: const Color(0xFF2563EB),
               onRefresh: () async {
+                if (!await requireConnectivity()) return;
                 await ref.read(productsListProvider.notifier).loadProducts();
                 await ref.read(categoriesProvider.notifier).loadCategories();
               },

@@ -9,22 +9,24 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   @override
   FutureEither<List<Customer>> getCustomers(String businessId) async {
-    try {
+    return runTask(() async {
       // 1. Fetch all customer profiles
-      final customersResponse = await _supabaseClient
-          .from('customers')
-          .select()
-          .eq('business_id', businessId)
-          .order('name', ascending: true);
+      final customersResponse = List<Map<String, dynamic>>.from(
+        await _supabaseClient
+            .from('customers')
+            .select()
+            .eq('business_id', businessId)
+            .order('name', ascending: true),
+      );
 
       // 2. Fetch all sales for this business to link dynamic history, totals owed, and deposits
-      final salesResponse = await _supabaseClient
-          .from('sales')
-          .select('*, sale_items(quantity)')
-          .eq('business_id', businessId)
-          .order('created_at', ascending: false);
-
-      final List<dynamic> salesList = salesResponse as List;
+      final salesList = List<Map<String, dynamic>>.from(
+        await _supabaseClient
+            .from('sales')
+            .select('*, sale_items(quantity)')
+            .eq('business_id', businessId)
+            .order('created_at', ascending: false),
+      );
 
       // Group sales by customer name
       final Map<String, List<CustomerOrder>> customerOrdersMap = {};
@@ -79,7 +81,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
         }
       }
 
-      final list = (customersResponse as List).map((data) {
+      final list = customersResponse.map((data) {
         final name = data['name']?.toString() ?? '';
         final key = name.trim().toLowerCase();
         final orders = customerOrdersMap[key] ?? [];
@@ -104,10 +106,8 @@ class CustomerRepositoryImpl implements CustomerRepository {
         );
       }).toList();
 
-      return right<Failure, List<Customer>>(list);
-    } catch (e) {
-      return left<Failure, List<Customer>>(ServerFailure(e.toString()));
-    }
+      return list;
+    }, requiresNetwork: true);
   }
 
   @override

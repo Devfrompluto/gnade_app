@@ -31,6 +31,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   }
 
   void _saveCustomer() async {
+    if (!await requireConnectivity()) return;
     if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();

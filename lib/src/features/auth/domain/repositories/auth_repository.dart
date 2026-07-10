@@ -65,6 +65,18 @@ abstract class AuthRepository {
     required String businessId,
     required String pin,
   });
+
+  /// Update active business profile details
+  FutureEither<void> updateBusinessProfile({
+    required String businessId,
+    String? name,
+    String? category,
+    String? phone,
+    String? address,
+  });
+
+  /// Clear the active business profile
+  FutureEither<void> clearActiveBusiness();
 }
 
 

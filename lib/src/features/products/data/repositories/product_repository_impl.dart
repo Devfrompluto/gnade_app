@@ -9,21 +9,21 @@ class ProductRepositoryImpl implements ProductRepository {
 
   @override
   FutureEither<List<Product>> getProducts(String businessId) async {
-    try {
-      final response = await _supabaseClient
-          .from('products')
-          .select()
-          .eq('business_id', businessId)
-          .order('name', ascending: true);
+    return runTask(() async {
+      final response = List<Map<String, dynamic>>.from(
+        await _supabaseClient
+            .from('products')
+            .select()
+            .eq('business_id', businessId)
+            .order('name', ascending: true),
+      );
 
-      final list = (response as List)
-          .map((data) => ProductModel.fromMap(data as Map<String, dynamic>) as Product)
+      final list = response
+          .map((data) => ProductModel.fromMap(data) as Product)
           .toList();
 
-      return right<Failure, List<Product>>(list);
-    } catch (e) {
-      return left<Failure, List<Product>>(ServerFailure(e.toString()));
-    }
+      return list;
+    }, requiresNetwork: true);
   }
 
   @override
@@ -62,13 +62,15 @@ class ProductRepositoryImpl implements ProductRepository {
   @override
   FutureEither<List<String>> getCategories(String businessId) async {
     try {
-      final response = await _supabaseClient
-          .from('categories')
-          .select('name')
-          .eq('business_id', businessId)
-          .order('name', ascending: true);
+      final response = List<Map<String, dynamic>>.from(
+        await _supabaseClient
+            .from('categories')
+            .select('name')
+            .eq('business_id', businessId)
+            .order('name', ascending: true),
+      );
 
-      final list = (response as List)
+      final list = response
           .map((data) => data['name'] as String)
           .toList();
 

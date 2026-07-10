@@ -50,6 +50,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
+            if (!await requireConnectivity()) return;
             ref.invalidate(dashboardDataProvider);
             await ref.read(dashboardDataProvider.future);
           },

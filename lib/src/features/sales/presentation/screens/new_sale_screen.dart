@@ -681,6 +681,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                         onPressed: _cartItems.isEmpty
                             ? null
                             : () {
+                                ref.read(salesCheckoutProvider.notifier).reset();
                                 _showPaymentConfirmationSheet(total);
                               },
                         child: Row(
@@ -838,6 +839,39 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                     ),
                   ),
                   SizedBox(height: 20.h),
+
+                  // ── Failure State Warning ──────────────────────────────────
+                  if (ref.watch(salesCheckoutProvider).hasError) ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(10.r),
+                        border: Border.all(color: const Color(0xFFFCA5A5), width: 1),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.error_outline_rounded,
+                              color: const Color(0xFFDC2626), size: 18.sp),
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: Text(
+                              ref.watch(salesCheckoutProvider).error is Failure
+                                  ? (ref.watch(salesCheckoutProvider).error as Failure).message
+                                  : 'Failed to record sale: ${ref.watch(salesCheckoutProvider).error}',
+                              style: TextStyle(
+                                color: const Color(0xFFDC2626),
+                                fontSize: 11.sp,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+                  ],
 
                   // ── Unpaid Credit Warning ──────────────────────────────────
                   if (isUnpaid) ...[ 
@@ -1046,6 +1080,9 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                       onPressed: ref.watch(salesCheckoutProvider).isLoading
                           ? null
                           : () async {
+                              // ── Connectivity gate ───────────────────────
+                              if (!await requireConnectivity()) return;
+
                               // Block partial if amount >= total
                               if (_paymentStatus == 'Partial' && amountReceived >= total) {
                                 return;
@@ -1056,10 +1093,10 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                               }
 
                               final businessProfile = ref.read(businessProfileProvider).value;
-                              final String bName = businessProfile?.name ?? 'GNADE MULTICONCEPT';
-                              final String bAddress = businessProfile?.address ?? '123 Market Street, Victoria Island, Lagos';
-                              final String bPhone = businessProfile?.phone ?? '+234 800 123 4567';
-                              const String bEmail = 'contact@gnademulticoncept.com';
+                               final String bName = businessProfile?.name ?? 'Kinetic Retail';
+                              final String bAddress = businessProfile?.address ?? '';
+                              final String bPhone = businessProfile?.phone ?? '';
+                              const String bEmail = '';
                               final String? bLogoUrl = businessProfile?.logoUrl;
 
                               final receiptItems = _cartItems.map((item) {

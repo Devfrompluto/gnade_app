@@ -343,23 +343,21 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                               ),
                               elevation: 0,
                             ),
-                            onPressed: () {
+                            onPressed: () async {
                               final name = newSupplierController.text.trim();
                               if (name.isNotEmpty) {
-                                final newSupplier = SupplierMock(
-                                  id: 's_${DateTime.now().millisecondsSinceEpoch}',
-                                  name: name,
-                                  phone: '',
-                                  supplyValue: '0',
-                                  debtAmount: '0',
-                                  purchases: const [],
-                                );
-                                ref.read(suppliersListProvider.notifier).update((state) => [...state, newSupplier]);
-                                setState(() {
-                                  _selectedSupplier = newSupplier;
-                                });
-                                Navigator.pop(context);
-                                showGlobalToast(message: 'Supplier "$name" created & selected!');
+                                final newSupplier = await ref.read(suppliersListProvider.notifier).addSupplier(name, '');
+                                if (newSupplier != null) {
+                                  setState(() {
+                                    _selectedSupplier = newSupplier;
+                                  });
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                    showGlobalToast(message: 'Supplier "$name" created & selected!');
+                                  }
+                                } else {
+                                  showGlobalToast(message: 'Failed to create supplier.', status: 'error');
+                                }
                               }
                             },
                             child: Text(
@@ -421,6 +419,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   }
 
   Future<void> _updateProduct() async {
+    if (!await requireConnectivity()) return;
     if (!_formKey.currentState!.validate() || _selectedCategory == null) {
       if (_selectedCategory == null) showGlobalToast(message: 'Select category', status: 'error');
       return;

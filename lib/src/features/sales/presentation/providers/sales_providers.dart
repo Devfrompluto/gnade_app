@@ -153,6 +153,10 @@ class SalesCheckoutNotifier extends StateNotifier<AsyncValue<Sale?>> {
       },
     );
   }
+
+  void reset() {
+    state = const AsyncValue.data(null);
+  }
 }
 
 final salesCheckoutProvider = StateNotifierProvider<SalesCheckoutNotifier, AsyncValue<Sale?>>((ref) {

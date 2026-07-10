@@ -24,10 +24,10 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen> {
     // Use passed data or construct a dummy fallback matching the mockup
     final data = widget.receiptData ??
         ReceiptData(
-          businessName: 'GNADE MULTICONCEPT',
-          businessAddress: '123 Market Street, Victoria Island, Lagos',
-          businessPhone: '+234 800 123 4567',
-          businessEmail: 'contact@gnademulticoncept.com',
+          businessName: 'Kinetic Retail',
+          businessAddress: '',
+          businessPhone: '',
+          businessEmail: '',
           invoiceNo: 'INV-2023-0891',
           dateTime: DateTime.now(),
           customerName: 'Musa Abubakar',

@@ -30,6 +30,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
   }
 
   Future<void> _handleRefresh() async {
+    if (!await requireConnectivity()) return;
     ref.invalidate(salesSummaryProvider);
     ref.invalidate(salesHistoryProvider(null));
     await ref.read(salesSummaryProvider.future);

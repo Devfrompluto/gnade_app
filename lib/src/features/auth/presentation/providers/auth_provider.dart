@@ -5,6 +5,7 @@ import 'package:gnade_app/src/imports/packages_imports.dart';
 import 'package:gnade_app/src/features/auth/domain/entities/business_summary.dart';
 import 'package:gnade_app/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:gnade_app/src/features/auth/domain/entities/user.dart';
 
 final authControllerProvider = StateNotifierProvider<AuthController, bool>((ref) {
   return AuthController(
@@ -24,28 +25,28 @@ class AuthController extends StateNotifier<bool> {
         _ref = ref,
         super(false); // loading state is false
 
-  void login({required BuildContext context, required String email, required String password}) async {
+  FutureEither<AppUser> login({required String email, required String password}) async {
     state = true;
     
     final result = await _repository.login(email: email, password: password);
     
     state = false;
-    result.fold(
-      (failure) {
-        if (context.mounted) {
-          showToast(context, message: failure.message, status: 'error');
-        }
-      },
-      (user) {
-        if (rootContext?.mounted ?? false) {
-          rootContext!.go(AppRoutes.dashboard);
-        }
+    return result.fold(
+      (failure) async => left(failure),
+      (user) async {
+        // Brief delay to mitigate "JWT issued at future" clock-skew errors
+        // that occur when the device clock is slightly ahead of the server.
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+
+        // Refresh session to read active_business_id from JWT appMetadata
+        await _ref.read(sessionProvider.notifier).refresh();
+
+        return right(user);
       },
     );
   }
 
-  void signUp({
-    required BuildContext context,
+  FutureEither<AppUser> signUp({
     required String name,
     required String email,
     required String password,
@@ -61,95 +62,10 @@ class AuthController extends StateNotifier<bool> {
     );
     
     state = false;
-    result.fold(
-      (failure) {
-        if (context.mounted) {
-          if (failure is EmailVerificationRequiredFailure) {
-            showAppDialog<void>(
-              child: Center(
-                child: Material(
-                  color: Colors.transparent,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 24.w),
-                    padding: EdgeInsets.all(24.w),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(16.w),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEBF2FF),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.mark_email_read_outlined,
-                            color: const Color(0xFF1A56DB),
-                            size: 40.sp,
-                          ),
-                        ),
-                        SizedBox(height: 20.h),
-                        Text(
-                          'Check Your Email',
-                          style: TextStyle(
-                            color: const Color(0xFF1E293B),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 20.sp,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 12.h),
-                        Text(
-                          'We\'ve sent a verification link to your email address. Please click the link to confirm your account, then log in to create or select your business.',
-                          style: TextStyle(
-                            color: const Color(0xFF64748B),
-                            fontSize: 14.sp,
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 24.h),
-                        SizedBox(
-                          width: double.infinity,
-                          child: AppButton(
-                            label: 'Go to Login',
-                            onPressed: () {
-                              Navigator.pop(rootContext!);
-                              context.go(AppRoutes.login);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          } else {
-            showToast(context, message: failure.message, status: 'error');
-          }
-        }
-      },
-      (user) {
-        if (rootContext?.mounted ?? false) {
-          rootContext!.go(AppRoutes.selectBusiness);
-        }
-      },
-    );
+    return result;
   }
 
-  Future<bool> switchBusiness({
-    required BuildContext context,
+  FutureEither<void> switchBusiness({
     required String businessId,
     required String pin,
   }) async {
@@ -158,19 +74,15 @@ class AuthController extends StateNotifier<bool> {
     state = false;
     
     return result.fold(
-      (failure) {
-        showToast(context, message: failure.message, status: 'error');
-        return false;
-      },
+      (failure) async => left(failure),
       (data) async {
         await _ref.read(sessionProvider.notifier).refresh();
-        return true;
+        return right(null);
       },
     );
   }
 
-  Future<bool> createBusiness({
-    required BuildContext context,
+  FutureEither<void> createBusiness({
     required String name,
     required String category,
     required String userName,
@@ -194,14 +106,10 @@ class AuthController extends StateNotifier<bool> {
     state = false;
 
     return result.fold(
-      (failure) {
-        showToast(context, message: failure.message, status: 'error');
-        return false;
-      },
+      (failure) async => left(failure),
       (data) async {
-        showToast(context, message: 'Business created successfully!', status: 'success');
         await _ref.read(sessionProvider.notifier).refresh();
-        return true;
+        return right(null);
       },
     );
   }
@@ -214,25 +122,51 @@ class AuthController extends StateNotifier<bool> {
     );
   }
 
-  void forgotPassword({required BuildContext context, required String email}) async {
+  FutureEither<void> forgotPassword({required String email}) async {
     state = true;
     
     final result = await _repository.forgotPassword(email: email);
 
     state = false;
-    result.fold(
-      (failure) {
-        if (context.mounted) {
-          showToast(context, message: failure.message, status: 'error');
-        }
+    return result;
+  }
+
+  FutureEither<void> updateBusinessProfile({
+    required String businessId,
+    String? name,
+    String? category,
+    String? phone,
+    String? address,
+  }) async {
+    state = true;
+    final result = await _repository.updateBusinessProfile(
+      businessId: businessId,
+      name: name,
+      category: category,
+      phone: phone,
+      address: address,
+    );
+    state = false;
+
+    return result.fold(
+      (failure) async => left(failure),
+      (success) async {
+        _ref.invalidate(businessProfileProvider);
+        return right(null);
       },
-      (success) {
-        if (context.mounted) {
-          showToast(context, message: 'Password reset link sent successfully', status: 'success');
-        }
-        if (context.mounted) {
-          context.go(AppRoutes.login);
-        }
+    );
+  }
+
+  FutureEither<void> clearActiveBusiness() async {
+    state = true;
+    final result = await _repository.clearActiveBusiness();
+    state = false;
+
+    return result.fold(
+      (failure) async => left(failure),
+      (success) async {
+        await _ref.read(sessionProvider.notifier).refresh();
+        return right(null);
       },
     );
   }

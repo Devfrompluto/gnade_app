@@ -84,24 +84,15 @@ class AuthService {
 
   FutureEither<Map<String, dynamic>?> getCurrentUser() async {
     return runTask(() async {
-      try {
-        final session = _supabaseClient.auth.currentSession;
-        if (session == null) return null;
+      final user = _supabaseClient.auth.currentUser;
+      if (user == null) return null;
 
-        final response = await _supabaseClient.auth.getUser();
-        final user = response.user;
-        if (user == null) return null;
-
-        return {
-          'id': user.id,
-          'email': user.email,
-          'name': user.userMetadata?['name'] ?? '',
-          'photoUrl': user.userMetadata?['avatar_url'],
-        };
-      } catch (e) {
-        await _supabaseClient.auth.signOut();
-        return null;
-      }
+      return {
+        'id': user.id,
+        'email': user.email,
+        'name': user.userMetadata?['name'] ?? '',
+        'photoUrl': user.userMetadata?['avatar_url'],
+      };
     });
   }
 
@@ -116,7 +107,7 @@ class AuthService {
           .eq('id', userId)
           .maybeSingle();
       return data;
-    });
+    }, requiresNetwork: true);
   }
 
   /// Fetch all businesses a user belongs to
@@ -171,6 +162,13 @@ class AuthService {
     }, requiresNetwork: true);
   }
 
+  FutureEither<void> clearActiveBusiness() async {
+    return runTask(() async {
+      await _supabaseClient.rpc<void>('clear_active_business');
+      await _supabaseClient.auth.refreshSession();
+    }, requiresNetwork: true);
+  }
+
   /// Set or update the PIN for a business
   FutureEither<void> setBusinessPin({
     required String businessId,
@@ -219,7 +217,7 @@ class AuthService {
           .eq('id', businessId)
           .single();
       return data;
-    });
+    }, requiresNetwork: true);
   }
 
   FutureEither<String?> uploadLogo(File logoFile) async {
@@ -229,7 +227,24 @@ class AuthService {
       await _supabaseClient.storage.from('logos').upload(path, logoFile);
       final publicUrl = _supabaseClient.storage.from('logos').getPublicUrl(path);
       return publicUrl;
-    });
+    }, requiresNetwork: true);
+  }
+
+  FutureEither<void> updateBusinessProfile({
+    required String businessId,
+    String? name,
+    String? category,
+    String? phone,
+    String? address,
+  }) async {
+    return runTask(() async {
+      await _supabaseClient.from('businesses').update({
+        if (name != null) 'name': name,
+        if (category != null) 'category': category,
+        if (phone != null) 'phone': phone,
+        if (address != null) 'address': address,
+      }).eq('id', businessId);
+    }, requiresNetwork: true);
   }
 
   void dispose() {

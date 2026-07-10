@@ -19,7 +19,7 @@ class AppMainHeader extends ConsumerWidget implements PreferredSizeWidget {
         : 'G';
 
     final businessAsync = ref.watch(businessProfileProvider);
-    final businessName = businessAsync.value?.name ?? 'Gnade Multiconcept';
+    final businessName = businessAsync.value?.name ?? 'Kinetic Retail';
 
     return AppBar(
       backgroundColor: Colors.white,

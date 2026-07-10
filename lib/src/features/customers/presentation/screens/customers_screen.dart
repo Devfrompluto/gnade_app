@@ -84,7 +84,10 @@ class CustomersScreen extends ConsumerWidget {
           Expanded(
             child: RefreshIndicator(
               color: const Color(0xFF1E3A8A),
-              onRefresh: () => ref.read(customerListProvider.notifier).loadCustomers(),
+              onRefresh: () async {
+                if (!await requireConnectivity()) return;
+                await ref.read(customerListProvider.notifier).loadCustomers();
+              },
               child: customers.isEmpty
                   ? Center(
                       child: SingleChildScrollView(

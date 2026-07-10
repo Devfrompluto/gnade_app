@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/imports.dart';
 import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/auth_provider.dart';
 import '../widgets/settings_group_card.dart';
 import '../widgets/app_settings_tile.dart';
 
@@ -122,7 +123,7 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
 
                 // 5. Sign Out Button
                 InkWell(
-                  onTap: () => _handleLogout(context),
+                  onTap: _handleLogout,
                   borderRadius: BorderRadius.circular(12.r),
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -168,7 +169,10 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
     );
   }
 
-  Future<void> _handleLogout(BuildContext context) async {
+  Future<void> _handleLogout() async {
+    final business = ref.read(businessProfileProvider).value;
+    final businessName = business?.name ?? 'your business';
+
     final confirm = await showAppDialog<bool>(
       child: Builder(
         builder: (dialogContext) => Dialog(
@@ -204,7 +208,7 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  'Are you sure you want to log out from Gnade Multiconcept?',
+                  'Are you sure you want to log out from $businessName?',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: const Color(0xFF475569),
@@ -243,7 +247,17 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
     );
 
     if (confirm ?? false) {
-      await ref.read(sessionProvider.notifier).logout();
+      if (!mounted) return;
+      final result = await ref.read(authControllerProvider.notifier).clearActiveBusiness();
+      if (!mounted) return;
+      
+      result.fold(
+        (failure) => showToast(context, message: failure.message, status: 'error'),
+        (_) {
+          showToast(context, message: 'Signed out of business profile', status: 'success');
+          context.go(AppRoutes.selectBusiness);
+        },
+      );
     }
   }
 }

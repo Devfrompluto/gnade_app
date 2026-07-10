@@ -12,15 +12,11 @@ FutureEither<T> runTask<T>(
   bool requiresNetwork = false,
 }) async {
   if (requiresNetwork) {
-    final hasNetwork = await InternetConnectionService().hasConnection();
+    final hasNetwork = await InternetConnectionService.instance.hasConnection();
 
     if (!hasNetwork) {
       AppLogger.warning('Network unavailable for task');
-      showGlobalToast(
-        message:
-            'No internet connection. Please check your connection and try again.',
-        status: 'warning',
-      );
+      InternetConnectionService.instance.showNoConnectionToast();
       return left(
         const NetworkFailure(
           'No internet connection. Please check your connection and try again.',

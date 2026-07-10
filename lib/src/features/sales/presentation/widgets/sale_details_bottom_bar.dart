@@ -85,10 +85,10 @@ class SaleDetailsBottomBar extends ConsumerWidget {
                 ),
                 onPressed: () {
                   final businessProfile = ref.read(businessProfileProvider).value;
-                  final String bName = businessProfile?.name ?? 'GNADE MULTICONCEPT';
-                  final String bAddress = businessProfile?.address ?? '123 Market Street, Victoria Island, Lagos';
-                  final String bPhone = businessProfile?.phone ?? '+234 800 123 4567';
-                  const String bEmail = 'contact@gnademulticoncept.com';
+                  final String bName = businessProfile?.name ?? 'Kinetic Retail';
+                  final String bAddress = businessProfile?.address ?? '';
+                  final String bPhone = businessProfile?.phone ?? '';
+                  const String bEmail = '';
 
                   final receiptItems = (sale.items ?? <SaleItem>[]).map((item) {
                     return ReceiptItem(

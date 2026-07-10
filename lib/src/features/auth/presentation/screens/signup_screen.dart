@@ -18,13 +18,96 @@ class SignupScreen extends ConsumerWidget {
       required String email,
       required String password,
     }) async {
-      ref.read(authControllerProvider.notifier).signUp(
-            context: context,
+      final result = await ref.read(authControllerProvider.notifier).signUp(
             name: name,
             email: email,
             password: password,
             phoneNumber: phoneNumber,
           );
+
+      if (!context.mounted) return;
+
+      result.fold(
+        (failure) {
+          if (failure is EmailVerificationRequiredFailure) {
+            showAppDialog<void>(
+              child: Center(
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 24.w),
+                    padding: EdgeInsets.all(24.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(16.w),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEBF2FF),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.mark_email_read_outlined,
+                            color: const Color(0xFF1A56DB),
+                            size: 40.sp,
+                          ),
+                        ),
+                        SizedBox(height: 20.h),
+                        Text(
+                          'Check Your Email',
+                          style: TextStyle(
+                            color: const Color(0xFF1E293B),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 20.sp,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 12.h),
+                        Text(
+                          'We\'ve sent a verification link to your email address. Please click the link to confirm your account, then log in to create or select your business.',
+                          style: TextStyle(
+                            color: const Color(0xFF64748B),
+                            fontSize: 14.sp,
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 24.h),
+                        SizedBox(
+                          width: double.infinity,
+                          child: AppButton(
+                            label: 'Go to Login',
+                            onPressed: () {
+                              Navigator.pop(rootContext!);
+                              context.go(AppRoutes.login);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          } else {
+            showToast(context, message: failure.message, status: 'error');
+          }
+        },
+        (user) {
+          context.go(AppRoutes.selectBusiness);
+        },
+      );
     }
 
     return Scaffold(

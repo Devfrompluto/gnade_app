@@ -8,9 +8,18 @@ class MoreProfileSummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
     final user = session.user;
-    final email = user?.email ?? 'gnade.admin@example.com';
-    final name = (user?.name != null && user!.name!.isNotEmpty) ? user.name! : 'Gnade Multiconcept';
-    final initials = name.isNotEmpty ? name[0].toUpperCase() : 'G';
+    final name = (user?.name != null && user!.name!.isNotEmpty) ? user.name! : 'User';
+    final initials = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+
+    final role = user?.role?.toLowerCase() ?? 'staff';
+    final userRoleLabel = switch (role) {
+      'owner' => 'Admin',
+      'manager' => 'Manager',
+      _ => 'Staff',
+    };
+
+    final businessAsync = ref.watch(businessProfileProvider);
+    final businessName = businessAsync.value?.name ?? '';
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -47,7 +56,7 @@ class MoreProfileSummaryCard extends ConsumerWidget {
             ),
           ),
           SizedBox(width: 16.w),
-          // Name and Email
+          // Name and Role
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,34 +71,36 @@ class MoreProfileSummaryCard extends ConsumerWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  email,
+                  userRoleLabel,
                   style: TextStyle(
                     color: const Color(0xFF64748B),
                     fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          // Edit Pencil Icon
-          GestureDetector(
-            onTap: () => showGlobalToast(message: 'Edit profile coming soon!'),
-            child: Container(
-              width: 36.w,
-              height: 36.w,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEFF6FF), // Light blue tint
-                shape: BoxShape.circle,
+          // Active Business Name Badge (replacing pencil icon)
+          if (businessName.isNotEmpty)
+            Container(
+              constraints: BoxConstraints(maxWidth: 100.w),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF), // Light blue Container
+                borderRadius: BorderRadius.circular(10.r),
               ),
-              child: Center(
-                child: Icon(
-                  Icons.edit_rounded,
-                  color: const Color(0xFF2563EB), // Blue icon
-                  size: 18.sp,
+              child: Text(
+                businessName,
+                style: TextStyle(
+                  color: const Color(0xFF1A56DB), // Blue text
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11.sp,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
         ],
       ),
     );

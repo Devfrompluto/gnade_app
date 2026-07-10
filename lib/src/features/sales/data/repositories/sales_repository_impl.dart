@@ -14,7 +14,7 @@ class SalesRepositoryImpl implements SalesRepository {
     required DateTime endDate,
     String? status,
   }) async {
-    try {
+    return runTask(() async {
       var query = _supabaseClient
           .from('sales')
           .select('*, sale_items(*)')
@@ -26,16 +26,16 @@ class SalesRepositoryImpl implements SalesRepository {
         query = query.eq('status', status.toLowerCase());
       }
 
-      final response = await query.order('created_at', ascending: false);
+      final response = List<Map<String, dynamic>>.from(
+        await query.order('created_at', ascending: false),
+      );
 
-      final list = (response as List)
-          .map((data) => SaleModel.fromMap(data as Map<String, dynamic>) as Sale)
+      final list = response
+          .map((data) => SaleModel.fromMap(data) as Sale)
           .toList();
 
-      return right<Failure, List<Sale>>(list);
-    } catch (e) {
-      return left<Failure, List<Sale>>(ServerFailure(e.toString()));
-    }
+      return list;
+    }, requiresNetwork: true);
   }
 
   @override
@@ -44,19 +44,21 @@ class SalesRepositoryImpl implements SalesRepository {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    try {
-      final response = await _supabaseClient
-          .from('sales')
-          .select('total_amount, sale_items(quantity, total, products(cost_price))')
-          .eq('business_id', businessId)
-          .gte('created_at', startDate.toIso8601String())
-          .lte('created_at', endDate.toIso8601String());
+    return runTask(() async {
+      final response = List<Map<String, dynamic>>.from(
+        await _supabaseClient
+            .from('sales')
+            .select('total_amount, sale_items(quantity, total, products(cost_price))')
+            .eq('business_id', businessId)
+            .gte('created_at', startDate.toIso8601String())
+            .lte('created_at', endDate.toIso8601String()),
+      );
 
       double totalAmount = 0;
       double totalProfit = 0;
       int count = 0;
 
-      for (final sale in response as List) {
+      for (final sale in response) {
         count++;
         totalAmount += double.tryParse(sale['total_amount']?.toString() ?? '') ?? 0.0;
         final items = sale['sale_items'] as List?;
@@ -71,14 +73,12 @@ class SalesRepositoryImpl implements SalesRepository {
         }
       }
 
-      return right<Failure, SalesSummary>(SalesSummary(
+      return SalesSummary(
         count: count,
         totalAmount: totalAmount,
         grossProfit: totalProfit,
-      ));
-    } catch (e) {
-      return left<Failure, SalesSummary>(ServerFailure(e.toString()));
-    }
+      );
+    }, requiresNetwork: true);
   }
 
   @override
@@ -93,7 +93,7 @@ class SalesRepositoryImpl implements SalesRepository {
     required String invoiceNo,
     required List<Map<String, dynamic>> items,
   }) async {
-    try {
+    return runTask(() async {
       // 1. Insert sale record
       final saleResponse = await _supabaseClient.from('sales').insert({
         'business_id': businessId,
@@ -141,24 +141,20 @@ class SalesRepositoryImpl implements SalesRepository {
           .eq('id', saleId)
           .single();
 
-      return right<Failure, Sale>(SaleModel.fromMap(finalResponse));
-    } catch (e) {
-      return left<Failure, Sale>(ServerFailure(e.toString()));
-    }
+      return SaleModel.fromMap(finalResponse);
+    }, requiresNetwork: true);
   }
 
   @override
   FutureEither<Sale> getSaleDetails(String saleId) async {
-    try {
+    return runTask(() async {
       final response = await _supabaseClient
           .from('sales')
           .select('*, sale_items(*)')
           .eq('id', saleId)
           .single();
 
-      return right<Failure, Sale>(SaleModel.fromMap(response));
-    } catch (e) {
-      return left<Failure, Sale>(ServerFailure(e.toString()));
-    }
+      return SaleModel.fromMap(response);
+    }, requiresNetwork: true);
   }
 }

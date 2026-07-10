@@ -26,9 +26,9 @@ class ToastCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: context.theme.colorScheme.outline,
-        ),
+        // border: Border.all(
+        //   color: context.theme.colorScheme.outline,
+        // ),
         boxShadow: [
           BoxShadow(
             blurRadius: 10,
@@ -57,4 +57,3 @@ class ToastCard extends StatelessWidget {
     );
   }
 }
-

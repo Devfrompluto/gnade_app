@@ -108,8 +108,7 @@ class _CreatePinScreenState extends ConsumerState<CreatePinScreen> {
 
     if (!mounted) return;
 
-    final success = await ref.read(authControllerProvider.notifier).createBusiness(
-          context: context,
+    final result = await ref.read(authControllerProvider.notifier).createBusiness(
           name: details['name'] as String,
           category: details['category'] as String,
           userName: ref.read(sessionProvider).user?.name ?? 'Owner',
@@ -125,9 +124,13 @@ class _CreatePinScreenState extends ConsumerState<CreatePinScreen> {
       _isLoading = false;
     });
 
-    if (success && context.mounted) {
-      context.go(AppRoutes.selectBusiness);
-    }
+    result.fold(
+      (failure) => showToast(context, message: failure.message, status: 'error'),
+      (_) {
+        showToast(context, message: 'Business created successfully!', status: 'success');
+        context.go(AppRoutes.selectBusiness);
+      },
+    );
   }
 
   @override

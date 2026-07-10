@@ -20,11 +20,13 @@ class HomeRepositoryImpl implements HomeRepository {
       final todayLocalDate = DateFormat('yyyy-MM-dd').format(now);
 
       // 2. Fetch today's sales
-      final salesData = await _client
-          .from('sales')
-          .select('total_amount')
-          .eq('business_id', businessId)
-          .gte('created_at', startOfToday);
+      final salesData = List<Map<String, dynamic>>.from(
+        await _client
+            .from('sales')
+            .select('total_amount')
+            .eq('business_id', businessId)
+            .gte('created_at', startOfToday),
+      );
 
       double todaySales = 0;
       for (final row in salesData) {
@@ -32,11 +34,13 @@ class HomeRepositoryImpl implements HomeRepository {
       }
 
       // 3. Fetch today's expenses
-      final expensesData = await _client
-          .from('expenses')
-          .select('amount')
-          .eq('business_id', businessId)
-          .eq('date', todayLocalDate);
+      final expensesData = List<Map<String, dynamic>>.from(
+        await _client
+            .from('expenses')
+            .select('amount')
+            .eq('business_id', businessId)
+            .eq('date', todayLocalDate),
+      );
 
       double todayExpenses = 0;
       for (final row in expensesData) {
@@ -45,11 +49,13 @@ class HomeRepositoryImpl implements HomeRepository {
 
       // 4. Fetch today's sold products and group them
       // inner join on sales permits filtering by business_id and date
-      final saleItemsData = await _client
-          .from('sale_items')
-          .select('product_name, quantity, total, sales!inner(business_id, created_at)')
-          .eq('sales.business_id', businessId)
-          .gte('sales.created_at', startOfToday);
+      final saleItemsData = List<Map<String, dynamic>>.from(
+        await _client
+            .from('sale_items')
+            .select('product_name, quantity, total, sales!inner(business_id, created_at)')
+            .eq('sales.business_id', businessId)
+            .gte('sales.created_at', startOfToday),
+      );
 
       final Map<String, SoldProductItem> groupedProducts = {};
       for (final row in saleItemsData) {

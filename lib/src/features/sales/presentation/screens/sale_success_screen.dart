@@ -445,10 +445,10 @@ class SaleSuccessScreen extends StatelessWidget {
 
   ReceiptData _createFallbackReceiptData() {
     return ReceiptData(
-      businessName: 'GNADE MULTICONCEPT',
-      businessAddress: '123 Market Street, Victoria Island, Lagos',
-      businessPhone: '+234 800 123 4567',
-      businessEmail: 'contact@gnademulticoncept.com',
+      businessName: 'Kinetic Retail',
+      businessAddress: '',
+      businessPhone: '',
+      businessEmail: '',
       invoiceNo: invoiceNo,
       dateTime: dateTime,
       customerName: 'Retail Customer',

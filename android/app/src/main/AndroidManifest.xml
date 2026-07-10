@@ -21,7 +21,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
-        android:label="gnade_app"
+        android:label="Kinetic Retail"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
