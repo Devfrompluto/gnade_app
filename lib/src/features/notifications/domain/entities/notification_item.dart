@@ -35,6 +35,19 @@ class NotificationItem extends Equatable {
     );
   }
 
+  factory NotificationItem.fromMap(Map<String, dynamic> map) {
+    return NotificationItem(
+      id: map['id']?.toString() ?? '',
+      title: map['title'] ?? '',
+      description: map['body'] ?? '',
+      timestamp: map['created_at'] != null 
+          ? DateTime.parse(map['created_at']).toLocal() 
+          : DateTime.now(),
+      isRead: map['read'] ?? false,
+      category: map['event'] ?? 'general',
+    );
+  }
+
   @override
   List<Object?> get props => [id, title, description, timestamp, isRead, category];
 }

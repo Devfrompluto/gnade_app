@@ -6,6 +6,11 @@ import 'package:gnade_app/src/features/customers/presentation/screens/select_cus
 import 'package:gnade_app/src/features/customers/presentation/screens/add_customer_screen.dart';
 import '../features/products/presentation/screens/add_product_screen.dart';
 import '../features/products/presentation/screens/edit_product_screen.dart';
+import 'package:gnade_app/src/features/team/presentation/screens/team_screen.dart';
+import 'package:gnade_app/src/features/team/presentation/screens/add_member_screen.dart';
+import 'package:gnade_app/src/features/team/presentation/screens/edit_member_screen.dart';
+import 'package:gnade_app/src/features/team/domain/entities/staff_member.dart';
+import 'package:gnade_app/src/features/auth/presentation/screens/employee_login_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -22,6 +27,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.login,
       name: 'login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.employeeLogin,
+      name: 'employeeLogin',
+      builder: (context, state) => const EmployeeLoginScreen(),
     ),
     GoRoute(
       path: AppRoutes.signup,
@@ -240,6 +250,27 @@ final GoRouter appRouter = GoRouter(
                   path: 'business-settings',
                   name: 'businessSettings',
                   builder: (context, state) => const BusinessSettingsScreen(),
+                ),
+                GoRoute(
+                  path: 'team',
+                  name: 'team',
+                  builder: (context, state) => const TeamScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'add',
+                      name: 'addMember',
+                      parentNavigatorKey: rootNavigatorKey,
+                      builder: (context, state) => const AddMemberScreen(),
+                    ),
+                    GoRoute(
+                      path: 'edit',
+                      name: 'editMember',
+                      parentNavigatorKey: rootNavigatorKey,
+                      builder: (context, state) => EditMemberScreen(
+                        member: state.extra as StaffMember,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

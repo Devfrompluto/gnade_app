@@ -53,50 +53,153 @@ class _AuthCreateBusinessFormState extends State<AuthCreateBusinessForm> {
   Future<void> _pickImage() async {
     final result = await showAppDialog<ImageSource>(
       child: Builder(
-        builder: (dialogContext) => SimpleDialog(
+        builder: (dialogContext) => Dialog(
           backgroundColor: Colors.white,
-          title: Text(
-            'Select Logo Source',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16.sp,
-              color: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Select Logo Source',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  'Choose where to import your business logo from',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                InkWell(
+                  onTap: () => Navigator.of(dialogContext).pop(ImageSource.gallery),
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(10.w),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: const Icon(
+                            Icons.photo_library_outlined,
+                            color: Color(0xFF1D4ED8),
+                          ),
+                        ),
+                        SizedBox(width: 14.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Gallery',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF0F172A),
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                'Choose an existing image',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: const Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                InkWell(
+                  onTap: () => Navigator.of(dialogContext).pop(ImageSource.camera),
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(10.w),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_outlined,
+                            color: Color(0xFF1D4ED8),
+                          ),
+                        ),
+                        SizedBox(width: 14.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Camera',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF0F172A),
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                'Take a new photo',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: const Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          children: [
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(dialogContext).pop(ImageSource.gallery),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.h),
-                child: Row(
-                  children: [
-                    const Icon(Icons.photo_library_outlined, color: Color(0xFF1A56DB)),
-                    SizedBox(width: 12.w),
-                    const Text('Gallery'),
-                  ],
-                ),
-              ),
-            ),
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(dialogContext).pop(ImageSource.camera),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.h),
-                child: Row(
-                  children: [
-                    const Icon(Icons.camera_alt_outlined, color: Color(0xFF1A56DB)),
-                    SizedBox(width: 12.w),
-                    const Text('Camera'),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
 
     if (result != null) {
       final pickResult = await MediaService.instance.pickImage(source: result);
+      if (!mounted) return;
       pickResult.fold(
         (failure) => showToast(context, message: failure.message, status: 'error'),
         (file) {

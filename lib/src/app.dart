@@ -1,7 +1,22 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 
-class App extends StatelessWidget {
+import 'package:gnade_app/src/features/notifications/data/notification_service.dart';
+
+class App extends StatefulWidget {
   const App({super.key});
+
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService.instance.initialize();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,5 @@
 import '../../imports/core_imports.dart';
 
-
 /// A themed text form field wrapping [TextFormField].
 ///
 /// Usage:
@@ -34,6 +33,9 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.initialValue,
     this.autofocus = false,
+    this.fillColor,
+    this.textCapitalization = TextCapitalization.none,
+    this.inputFormatters,
   });
 
   final String? label;
@@ -54,6 +56,9 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final String? initialValue;
   final bool autofocus;
+  final Color? fillColor;
+  final TextCapitalization textCapitalization;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +82,16 @@ class AppTextField extends StatelessWidget {
       autofocus: autofocus,
       style: tt.bodyLarge?.copyWith(color: cs.onSurface),
       cursorColor: cs.primary,
+      textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         isDense: true,
         labelText: label,
         hintText: hint,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
+        filled: fillColor != null ? true : null,
+        fillColor: fillColor,
       ),
     );
   }

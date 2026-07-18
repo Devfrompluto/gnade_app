@@ -25,13 +25,6 @@ class MediaService {
         if (!status.isGranted) {
           throw Exception('Camera permission denied');
         }
-      } else {
-        if (Platform.isAndroid || Platform.isIOS) {
-          final status = await Permission.photos.request();
-          if (!status.isGranted && !status.isLimited) {
-            throw Exception('Photos permission denied');
-          }
-        }
       }
 
       final XFile? file = await _imagePicker.pickImage(
@@ -52,12 +45,7 @@ class MediaService {
     int? imageQuality,
   }) async {
     return runTask(() async {
-      if (Platform.isAndroid || Platform.isIOS) {
-        final status = await Permission.photos.request();
-        if (!status.isGranted && !status.isLimited) {
-          throw Exception('Photos permission denied');
-        }
-      }
+      // Note: Multi-image picking uses system Photo Picker, no permission request needed.
 
       final List<XFile> files = await _imagePicker.pickMultiImage(
         maxWidth: maxWidth,
@@ -79,13 +67,6 @@ class MediaService {
         final status = await Permission.camera.request();
         if (!status.isGranted) {
           throw Exception('Camera permission denied');
-        }
-      } else {
-        if (Platform.isAndroid || Platform.isIOS) {
-          final status = await Permission.photos.request();
-          if (!status.isGranted && !status.isLimited) {
-            throw Exception('Photos permission denied');
-          }
         }
       }
 

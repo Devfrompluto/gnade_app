@@ -2,6 +2,8 @@ import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 
+import 'package:gnade_app/src/features/notifications/presentation/providers/notifications_provider.dart';
+
 class AppMainHeader extends ConsumerWidget implements PreferredSizeWidget {
   const AppMainHeader({super.key});
 
@@ -15,11 +17,22 @@ class AppMainHeader extends ConsumerWidget implements PreferredSizeWidget {
     final user = session.user;
     final userName = user?.name ?? '';
     final initials = userName.isNotEmpty
-        ? userName.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
+        ? userName
+            .trim()
+            .split(' ')
+            .map((e) => e[0])
+            .take(2)
+            .join()
+            .toUpperCase()
         : 'G';
 
     final businessAsync = ref.watch(businessProfileProvider);
     final businessName = businessAsync.value?.name ?? 'Kinetic Retail';
+
+    final unreadCount = ref.watch(notificationsListProvider).maybeWhen(
+          data: (list) => list.where((item) => !item.isRead).length,
+          orElse: () => 0,
+        );
 
     return AppBar(
       backgroundColor: Colors.white,
@@ -70,11 +83,6 @@ class AppMainHeader extends ConsumerWidget implements PreferredSizeWidget {
                           ),
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_drop_down_rounded,
-                        color: colorScheme.onSurface,
-                        size: 24.sp,
-                      ),
                     ],
                   ),
                 ),
@@ -105,31 +113,32 @@ class AppMainHeader extends ConsumerWidget implements PreferredSizeWidget {
                     size: 16.sp,
                   ),
                 ),
-                Positioned(
-                  top: -2.h,
-                  right: -2.w,
-                  child: Container(
-                    padding: EdgeInsets.all(4.w),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE11D48), // Vibrant red badge
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: BoxConstraints(
-                      minWidth: 16.w,
-                      minHeight: 16.w,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '75',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.sp,
-                          fontWeight: FontWeight.bold,
+                if (unreadCount > 0)
+                  Positioned(
+                    top: -2.h,
+                    right: -2.w,
+                    child: Container(
+                      padding: EdgeInsets.all(4.w),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE11D48), // Vibrant red badge
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: BoxConstraints(
+                        minWidth: 16.w,
+                        minHeight: 16.w,
+                      ),
+                      child: Center(
+                        child: Text(
+                          unreadCount > 99 ? '99+' : '$unreadCount',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

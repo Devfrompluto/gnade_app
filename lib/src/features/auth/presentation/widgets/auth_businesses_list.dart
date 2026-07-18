@@ -50,40 +50,41 @@ class AuthBusinessesList extends StatelessWidget {
             SizedBox(height: 16.h),
           ],
 
-          // Inline "+ Add New Business" Outline Button
-          SizedBox(
-            width: double.infinity,
-            height: 52.h,
-            child: OutlinedButton(
-              onPressed: () => context.push(AppRoutes.createBusiness),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: const Color(0xFF1A56DB), width: 1.5.w),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
+          // Inline "+ Add New Business" Outline Button (Hidden for strict employees)
+          if (businesses.isEmpty || businesses.any((b) => b.role == 'owner'))
+            SizedBox(
+              width: double.infinity,
+              height: 52.h,
+              child: OutlinedButton(
+                onPressed: () => context.push(AppRoutes.createBusiness),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: const Color(0xFF1A56DB), width: 1.5.w),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  backgroundColor: const Color(0xFFF8FAFC),
                 ),
-                backgroundColor: const Color(0xFFF8FAFC),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_rounded,
-                    color: const Color(0xFF1A56DB),
-                    size: 20.sp,
-                  ),
-                  SizedBox(width: 4.w),
-                  Text(
-                    'Add New Business',
-                    style: TextStyle(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_rounded,
                       color: const Color(0xFF1A56DB),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.sp,
+                      size: 20.sp,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 4.w),
+                    Text(
+                      'Add New Business',
+                      style: TextStyle(
+                        color: const Color(0xFF1A56DB),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.sp,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           
           SizedBox(height: 40.h),
         ],

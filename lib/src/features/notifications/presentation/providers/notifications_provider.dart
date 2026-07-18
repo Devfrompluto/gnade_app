@@ -1,4 +1,5 @@
 import 'package:gnade_app/src/imports/imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import '../../domain/entities/notification_item.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../../data/repositories/notification_repository_impl.dart';
@@ -11,16 +12,26 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 /// State notifier for loading and managing notification list state
 class NotificationsListNotifier extends StateNotifier<AsyncValue<List<NotificationItem>>> {
   final NotificationRepository _repository;
+  final String _businessId;
 
-  NotificationsListNotifier({required NotificationRepository repository})
-      : _repository = repository,
+  NotificationsListNotifier({
+    required NotificationRepository repository,
+    required String businessId,
+  })  : _repository = repository,
+        _businessId = businessId,
         super(const AsyncValue.loading()) {
-    loadNotifications();
+    if (_businessId.isNotEmpty) {
+      loadNotifications();
+    } else {
+      state = const AsyncValue.data([]);
+    }
   }
 
   Future<void> loadNotifications() async {
+    if (_businessId.isEmpty) return;
     state = const AsyncValue.loading();
-    final result = await _repository.getNotifications();
+    final result = await _repository.getNotifications(_businessId);
+    if (!mounted) return;
     result.fold(
       (failure) => state = AsyncValue.error(failure, StackTrace.current),
       (list) => state = AsyncValue.data(list),
@@ -44,6 +55,7 @@ class NotificationsListNotifier extends StateNotifier<AsyncValue<List<Notificati
   }
 
   Future<void> markAllAsRead() async {
+    if (_businessId.isEmpty) return;
     final currentData = state.value;
     if (currentData == null) return;
 
@@ -51,14 +63,20 @@ class NotificationsListNotifier extends StateNotifier<AsyncValue<List<Notificati
     final updatedList = currentData.map((item) => item.copyWith(isRead: true)).toList();
     state = AsyncValue.data(updatedList);
 
-    await _repository.markAllAsRead();
+    await _repository.markAllAsRead(_businessId);
   }
 }
 
 /// Provider for notifications list
 final notificationsListProvider = StateNotifierProvider<NotificationsListNotifier, AsyncValue<List<NotificationItem>>>((ref) {
   final repository = ref.watch(notificationRepositoryProvider);
-  return NotificationsListNotifier(repository: repository);
+  final sessionState = ref.watch<SessionState>(sessionProvider);
+  final businessId = sessionState.user?.businessId ?? '';
+  
+  return NotificationsListNotifier(
+    repository: repository,
+    businessId: businessId,
+  );
 });
 
 /// Provider for selected notification category filter chip

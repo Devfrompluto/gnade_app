@@ -90,7 +90,7 @@ class MoreScreen extends ConsumerWidget {
                       icon: HugeIcons.strokeRoundedUserGroup,
                       iconColor: const Color(0xFF2563EB),
                       iconBgColor: const Color(0xFFEFF6FF),
-                      onTap: () => showGlobalToast(message: 'User Management coming soon!'),
+                      onTap: () => context.push(AppRoutes.team),
                     ),
                     MoreSettingTile(
                       title: 'Suppliers',

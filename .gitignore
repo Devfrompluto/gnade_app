@@ -44,3 +44,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase / Google Services configuration files
+**/google-services.json
+**/GoogleService-Info.plist
+
+**/supabase/functions/

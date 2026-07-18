@@ -113,7 +113,7 @@ class AuthService {
   /// Fetch all businesses a user belongs to
   FutureEither<List<dynamic>> getBusinesses() async {
     return runTask(() async {
-      final response = await _supabaseClient.rpc<List<dynamic>>('get_user_businesses');
+      final response = await _supabaseClient.rpc<List<dynamic>>('get_user_business_summaries');
       return response;
     }, requiresNetwork: true);
   }

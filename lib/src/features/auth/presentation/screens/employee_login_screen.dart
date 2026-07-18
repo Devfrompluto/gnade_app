@@ -1,47 +1,63 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 import 'package:gnade_app/src/features/auth/presentation/providers/auth_provider.dart';
-
 import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class EmployeeLoginScreen extends ConsumerStatefulWidget {
+  const EmployeeLoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<EmployeeLoginScreen> createState() => _EmployeeLoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _EmployeeLoginScreenState extends ConsumerState<EmployeeLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _employeeIdCtr = TextEditingController();
+  final _pinCtr = TextEditingController();
+  bool _obscurePin = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _employeeIdCtr.dispose();
+    _pinCtr.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isLoading = ref.watch(authControllerProvider);
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
+  Future<void> _handleLogin() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    Future<void> handleLogin() async {
-      if (!(_formKey.currentState?.validate() ?? false)) return;
-      
+    setState(() => _isLoading = true);
+
+    try {
+      final employeeId = _employeeIdCtr.text.trim().toUpperCase();
+      final pin = _pinCtr.text.trim();
+
+      // 1. Look up the internal email for this employee ID via RPC
+      final email = await Supabase.instance.client
+          .rpc<dynamic>('get_employee_login_email', params: {'p_employee_id': employeeId});
+
+      if (email == null || (email is String && email.isEmpty)) {
+        if (mounted) {
+          showToast(context, message: 'Employee ID not found', status: 'error');
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Sign in with the internal email and PIN
       final result = await ref.read(authControllerProvider.notifier).login(
-        email: _emailController.text.trim(), 
-        password: _passwordController.text.trim(),
+        email: email as String,
+        password: pin,
       );
 
       if (!mounted) return;
 
       result.fold(
-        (failure) => showToast(context, message: failure.message, status: 'error'),
+        (failure) {
+          showToast(context, message: 'Invalid PIN or account inactive', status: 'error');
+        },
         (user) {
           final session = ref.read(sessionProvider);
           if (session.status == SessionStatus.authenticated) {
@@ -51,7 +67,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
         },
       );
+    } catch (e) {
+      if (mounted) {
+        showToast(context, message: 'Login failed. Please try again.', status: 'error');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -65,31 +93,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(height: AppSpacing.md.h),
-                  
-                  // Storefront Rounded Square Badge
+
+                  // Badge icon
                   Center(
                     child: Container(
                       width: 72.w,
                       height: 72.w,
                       decoration: BoxDecoration(
-                        color: cs.primary,
+                        color: const Color(0xFF0F766E), // teal
                         borderRadius: BorderRadius.circular(16.r),
                       ),
                       child: Center(
                         child: Icon(
-                          Icons.storefront_rounded,
+                          Icons.badge_outlined,
                           size: 32.sp,
                           color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: AppSpacing.md.h),
-                  
-                  // Welcome Back Title
+
+                  // Title
                   Text(
-                    'auth.welcome_back'.tr(),
+                    'Staff Login',
                     style: tt.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface,
@@ -97,49 +125,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       letterSpacing: -0.5,
                     ),
                   ),
-                  
+
                   SizedBox(height: AppSpacing.xs.h),
-                  
+
                   // Subtitle
                   Text(
-                    'auth.sign_in_to_continue'.tr(),
+                    'Enter your Employee ID and PIN to access your business',
                     textAlign: TextAlign.center,
                     style: tt.bodyMedium?.copyWith(
                       color: cs.onSurfaceVariant.withValues(alpha: 0.8),
                       fontSize: 14.sp,
                     ),
                   ),
-                  
+
                   SizedBox(height: AppSpacing.lg.h),
-                  
-                  // Email Input Field
+
+                  // Employee ID field
                   AppTextField(
-                    controller: _emailController,
-                    enabled: !isLoading,
-                    label: 'auth.email_or_employee_id'.tr(),
+                    controller: _employeeIdCtr,
+                    enabled: !_isLoading,
+                    label: 'Employee ID',
+                    textCapitalization: TextCapitalization.characters,
                     prefixIcon: Padding(
                       padding: EdgeInsets.only(left: 4.w),
                       child: Icon(
-                        Icons.person_outline_rounded,
+                        Icons.badge_outlined,
                         color: cs.onSurfaceVariant.withValues(alpha: 0.6),
                       ),
                     ),
                     validator: (v) {
                       if (AppUtils.isBlank(v)) {
-                        return 'auth.email_or_employee_id_required'.tr();
+                        return 'Employee ID is required';
                       }
                       return null;
                     },
                   ),
-                  
+
                   SizedBox(height: AppSpacing.md.h),
-                  
-                  // Password Input Field
+
+                  // PIN field
                   AppTextField(
-                    controller: _passwordController,
-                    enabled: !isLoading,
-                    label: 'auth.password'.tr(),
-                    obscureText: _obscurePassword,
+                    controller: _pinCtr,
+                    enabled: !_isLoading,
+                    label: 'PIN',
+                    obscureText: _obscurePin,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
                     prefixIcon: Padding(
                       padding: EdgeInsets.only(left: 4.w),
                       child: Icon(
@@ -149,80 +183,57 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword 
-                            ? Icons.visibility_outlined 
+                        _obscurePin
+                            ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
                         color: cs.onSurfaceVariant.withValues(alpha: 0.6),
                       ),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () => setState(() => _obscurePin = !_obscurePin),
                     ),
                     validator: (v) {
                       if (AppUtils.isBlank(v)) {
-                        return 'auth.password_required'.tr();
+                        return 'PIN is required';
                       }
-                      if (v!.length < 6) {
-                        return 'auth.password_too_short'.tr();
+                      if (v!.length < 4) {
+                        return 'PIN must be at least 4 digits';
                       }
                       return null;
                     },
                   ),
-                  
-                  SizedBox(height: AppSpacing.sm.h),
-                  
-                  // Forgot Password Link (aligned right)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      onPressed: () => context.push(AppRoutes.forgotPassword),
-                      child: Text(
-                        'auth.forgot_password'.tr(),
-                        style: TextStyle(
-                          color: cs.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13.sp,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  SizedBox(height: AppSpacing.md.h),
-                  
-                  // Login Button
+
+                  SizedBox(height: AppSpacing.lg.h),
+
+                  // Login button
                   AppButton(
-                    label: 'auth.login_button'.tr(),
-                    isLoading: isLoading,
-                    onPressed: isLoading ? null : handleLogin,
+                    label: 'Login',
+                    isLoading: _isLoading,
+                    onPressed: _isLoading ? null : _handleLogin,
                     height: ButtonSize.medium,
                     isFullWidth: true,
                   ),
-                  
+
                   SizedBox(height: AppSpacing.lg.h),
 
-                  // Footer link to Signup Screen
+                  // Back to owner login
                   Center(
                     child: TextButton(
-                      onPressed: isLoading
+                      onPressed: _isLoading
                           ? null
-                          : () => context.go(AppRoutes.signup),
+                          : () => context.go(AppRoutes.login),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: RichText(
                         text: TextSpan(
-                          text: 'auth.dont_have_account'.tr(),
+                          text: 'Business owner? ',
                           style: tt.bodyMedium?.copyWith(
                             color: cs.onSurfaceVariant.withValues(alpha: 0.8),
                             fontSize: 14.sp,
                           ),
                           children: [
                             TextSpan(
-                              text: 'auth.sign_up'.tr(),
+                              text: 'Login here',
                               style: TextStyle(
                                 color: cs.primary,
                                 fontWeight: FontWeight.bold,
@@ -235,40 +246,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
 
-                  SizedBox(height: AppSpacing.sm.h),
-
-                  // Staff login link
-                  Center(
-                    child: TextButton(
-                      onPressed: isLoading
-                          ? null
-                          : () => context.go(AppRoutes.employeeLogin),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'Staff member? ',
-                          style: tt.bodyMedium?.copyWith(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.8),
-                            fontSize: 14.sp,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: 'Login with Employee ID',
-                              style: TextStyle(
-                                color: cs.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  
                   SizedBox(height: AppSpacing.xl.h),
                 ],
               ),

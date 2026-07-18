@@ -96,7 +96,9 @@ class _PinEntryBottomSheetState extends ConsumerState<PinEntryBottomSheet> with 
           _shakeController.forward(from: 0);
         },
         (_) {
-          Navigator.pop(context, true);
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context, true);
+          }
         },
       );
     }

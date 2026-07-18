@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:gnade_app/src/imports/imports.dart';
 import 'package:gnade_app/src/features/auth/domain/entities/user.dart';
 import 'package:gnade_app/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:gnade_app/src/features/auth/domain/entities/business_profile.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:gnade_app/src/features/notifications/data/notification_service.dart';
 
 import 'package:gnade_app/src/features/auth/data/repositories/auth_repository_impl.dart';
 
@@ -74,6 +77,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
           state = SessionState(status: SessionStatus.incomplete, user: user);
         } else {
           state = SessionState(status: SessionStatus.authenticated, user: user);
+          _registerFcmToken(user.id);
         }
       },
     );
@@ -85,6 +89,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
           state = SessionState(status: SessionStatus.incomplete, user: user);
         } else {
           state = SessionState(status: SessionStatus.authenticated, user: user);
+          _registerFcmToken(user.id);
         }
       } else {
         state = const SessionState(status: SessionStatus.unauthenticated);
@@ -92,7 +97,39 @@ class SessionNotifier extends StateNotifier<SessionState> {
     });
   }
 
+  Future<void> _registerFcmToken(String userId) async {
+    try {
+      final token = await NotificationService.instance.getToken();
+      if (token == null) return;
+
+      final platform = Platform.isIOS ? 'ios' : 'android';
+      await Supabase.instance.client.from('device_tokens').upsert(
+        {
+          'user_id': userId,
+          'token': token,
+          'platform': platform,
+          'updated_at': DateTime.now().toIso8601String(),
+        },
+        onConflict: 'user_id, token',
+      );
+    } catch (e) {
+      AppLogger.error('Failed to register FCM token: $e');
+    }
+  }
+
   Future<void> logout() async {
+    try {
+      final token = await NotificationService.instance.getToken();
+      if (token != null) {
+        await Supabase.instance.client
+            .from('device_tokens')
+            .delete()
+            .eq('token', token);
+      }
+    } catch (e) {
+      AppLogger.error('Failed to remove FCM token on logout: $e');
+    }
+    
     await _repository.logout();
     state = const SessionState(status: SessionStatus.unauthenticated);
   }

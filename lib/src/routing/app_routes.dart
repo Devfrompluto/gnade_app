@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   static const String home = '/';
   static const String onboarding = '/onboarding';
   static const String login = '/login';
+  static const String employeeLogin = '/employee-login';
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
   static const String selectBusiness = '/select-business';
@@ -23,6 +24,9 @@ abstract final class AppRoutes {
   static const String more = '/more';
   static const String appSettings = '/more/app-settings';
   static const String businessSettings = '/more/business-settings';
+  static const String team = '/more/team';
+  static const String addMember = '/more/team/add';
+  static const String editMember = '/more/team/edit';
   static const String notifications = '/notifications';
 
   // Sales Inner Flow

@@ -19,9 +19,33 @@ void showToast(
     }
   }
 
+  ColorScheme colorScheme;
+  AppColorsExtension appColors;
+  ThemeData theme;
+
+  try {
+    colorScheme = activeContext.colors;
+    appColors = activeContext.appColors;
+    theme = activeContext.theme;
+  } catch (e) {
+    final rc = rootContext;
+    if (rc != null && rc.mounted) {
+      activeContext = rc;
+      try {
+        colorScheme = activeContext.colors;
+        appColors = activeContext.appColors;
+        theme = activeContext.theme;
+      } catch (_) {
+        AppLogger.warning('Cannot show toast: failed to look up theme on rootContext.');
+        return;
+      }
+    } else {
+      AppLogger.warning('Cannot show toast: context is deactivated and no rootContext is available.');
+      return;
+    }
+  }
+
   final toastStatus = status ?? 'info';
-  final colorScheme = activeContext.colors;
-  final appColors = activeContext.appColors;
 
   final (backgroundColor, foregroundColor, iconColor) = switch (toastStatus) {
     'error' => (
@@ -45,7 +69,7 @@ void showToast(
         appColors.info,
       ),
     _ => (
-        activeContext.theme.scaffoldBackgroundColor,
+        theme.scaffoldBackgroundColor,
         colorScheme.onSurface,
         colorScheme.onSurfaceVariant,
       ),
