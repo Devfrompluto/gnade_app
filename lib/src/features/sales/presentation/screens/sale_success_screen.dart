@@ -1,7 +1,8 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import '../../../printing/presentation/providers/printer_providers.dart';
 
-class SaleSuccessScreen extends StatelessWidget {
+class SaleSuccessScreen extends ConsumerWidget {
   final String invoiceNo;
   final double amountPaid;
   final double total;
@@ -41,7 +42,7 @@ class SaleSuccessScreen extends StatelessWidget {
           : Icons.warning_amber_rounded;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -196,7 +197,7 @@ class SaleSuccessScreen extends StatelessWidget {
                                 ),
 
                                 // Balance owed row for partial
-                                if (isPartial) ...[ 
+                                if (isPartial) ...[
                                   SizedBox(height: 10.h),
                                   Container(
                                     padding: EdgeInsets.symmetric(
@@ -365,10 +366,12 @@ class SaleSuccessScreen extends StatelessWidget {
                         elevation: 0,
                       ),
                       onPressed: () {
-                        context.push(
-                          AppRoutes.printReceipt,
-                          extra: receiptData ?? _createFallbackReceiptData(),
-                        );
+                        if (checkAndPromptPrinterSetup(context, ref)) {
+                          context.push(
+                            AppRoutes.printReceipt,
+                            extra: receiptData ?? _createFallbackReceiptData(),
+                          );
+                        }
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

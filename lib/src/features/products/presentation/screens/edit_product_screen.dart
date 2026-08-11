@@ -35,6 +35,19 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   bool _isLoading = false;
   double _profitMargin = 0;
 
+  // Reason for stock edit
+  String _selectedReason = 'Product information update';
+  final _reasonNoteController = TextEditingController();
+  static const List<String> _editReasonOptions = [
+    'Product information update',
+    'Inventory count adjustment',
+    'Damaged / Broken stock',
+    'Returned item',
+    'Stolen / Lost stock',
+    'Price correction',
+    'Other',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +65,16 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
     _selectedCategory = widget.product.category;
     _selectedUnit = widget.product.unit;
+    if (widget.product.supplier.isNotEmpty && widget.product.supplier != 'None') {
+      _selectedSupplier = SupplierMock(
+        id: widget.product.supplierId,
+        name: widget.product.supplier,
+        phone: '',
+        supplyValue: '',
+        debtAmount: '',
+        purchases: const [],
+      );
+    }
 
     _calculateMargin();
 
@@ -68,6 +91,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
     _quantityController.dispose();
     _lowStockController.dispose();
     _expiryDateController.dispose();
+    _reasonNoteController.dispose();
     super.dispose();
   }
 
@@ -436,6 +460,8 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       lowStockAt: double.parse(_lowStockController.text),
       unit: _selectedUnit,
       expiryDate: _expiryDate,
+      supplierId: _selectedSupplier?.id,
+      supplierName: _selectedSupplier?.name,
     );
     setState(() => _isLoading = false);
     if (res != null) {
@@ -451,7 +477,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('Update Product', style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold)),
+        title: const Text('Edit Product', style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -486,6 +512,60 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                 ProductsAddSupplierCard(
                   selectedSupplier: _selectedSupplier,
                   onSupplierTap: _showSupplierSelectorSheet,
+                ),
+                SizedBox(height: 16.h),
+                // Reason Box for stock changes
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.assignment_turned_in_outlined, color: const Color(0xFF1E40AF), size: 18.sp),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Reason for Changes',
+                            style: TextStyle(
+                              color: const Color(0xFF0F172A),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10.h),
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedReason,
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                            borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          ),
+                        ),
+                        items: _editReasonOptions
+                            .map((r) => DropdownMenuItem(value: r, child: Text(r, style: TextStyle(fontSize: 13.sp, color: const Color(0xFF0F172A)))))
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedReason = val);
+                        },
+                      ),
+                      SizedBox(height: 10.h),
+                      AppTextField(
+                        controller: _reasonNoteController,
+                        hint: 'Additional note (optional)',
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(height: 32.h),
                 ProductsAddBottomActions(

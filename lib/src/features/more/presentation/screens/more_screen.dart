@@ -32,14 +32,14 @@ class MoreScreen extends ConsumerWidget {
                     MoreSettingTile(
                       title: 'App Settings',
                       icon: HugeIcons.strokeRoundedSlidersHorizontal,
-                      iconColor: const Color(0xFF2563EB),
+                      iconColor: const Color(0xFF1E40AF),
                       iconBgColor: const Color(0xFFEFF6FF),
                       onTap: () => context.push(AppRoutes.appSettings),
                     ),
                     MoreSettingTile(
                       title: 'Business Settings',
                       icon: HugeIcons.strokeRoundedStore01,
-                      iconColor: const Color(0xFF2563EB),
+                      iconColor: const Color(0xFF1E40AF),
                       iconBgColor: const Color(0xFFEFF6FF),
                       onTap: () => context.push(AppRoutes.businessSettings),
                     ),
@@ -53,7 +53,21 @@ class MoreScreen extends ConsumerWidget {
                   ],
                 ),
 
-                // 3. Business Info Group
+                // 3. Hardware & Printing Group
+                MoreCategoryCard(
+                  title: 'Hardware & Printing',
+                  children: [
+                    MoreSettingTile(
+                      title: 'Printer Management',
+                      icon: Icons.print_outlined,
+                      iconColor: const Color(0xFF1E40AF),
+                      iconBgColor: const Color(0xFFEFF6FF),
+                      onTap: () => context.push(AppRoutes.savedPrinters),
+                    ),
+                  ],
+                ),
+
+                // 4. Business Info Group
                 MoreCategoryCard(
                   title: 'Business Info',
                   children: [
@@ -81,51 +95,23 @@ class MoreScreen extends ConsumerWidget {
                   ],
                 ),
 
-                // 4. People Group
+                // 5. People Group
                 MoreCategoryCard(
                   title: 'People',
                   children: [
                     MoreSettingTile(
                       title: 'User Management',
                       icon: HugeIcons.strokeRoundedUserGroup,
-                      iconColor: const Color(0xFF2563EB),
+                      iconColor: const Color(0xFF1E40AF),
                       iconBgColor: const Color(0xFFEFF6FF),
                       onTap: () => context.push(AppRoutes.team),
                     ),
                     MoreSettingTile(
                       title: 'Suppliers',
                       icon: Icons.local_shipping_outlined,
-                      iconColor: const Color(0xFF2563EB),
+                      iconColor: const Color(0xFF1E40AF),
                       iconBgColor: const Color(0xFFEFF6FF),
-                      onTap: () => showGlobalToast(message: 'Suppliers coming soon!'),
-                    ),
-                  ],
-                ),
-
-                // 5. Support Group
-                MoreCategoryCard(
-                  title: 'Support',
-                  children: [
-                    MoreSettingTile(
-                      title: 'Contact Us',
-                      icon: Icons.headset_mic_outlined,
-                      iconColor: const Color(0xFF2563EB),
-                      iconBgColor: const Color(0xFFEFF6FF),
-                      onTap: () => showGlobalToast(message: 'Contact Us coming soon!'),
-                    ),
-                    MoreSettingTile(
-                      title: 'Rate App',
-                      icon: Icons.star_outline_rounded,
-                      iconColor: const Color(0xFF2563EB),
-                      iconBgColor: const Color(0xFFEFF6FF),
-                      onTap: () => showGlobalToast(message: 'Rate App coming soon!'),
-                    ),
-                    MoreSettingTile(
-                      title: 'Privacy Policy',
-                      icon: Icons.shield_outlined,
-                      iconColor: const Color(0xFF2563EB),
-                      iconBgColor: const Color(0xFFEFF6FF),
-                      onTap: () => showGlobalToast(message: 'Privacy Policy coming soon!'),
+                      onTap: () => context.push(AppRoutes.suppliers),
                     ),
                   ],
                 ),

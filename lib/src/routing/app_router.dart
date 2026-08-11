@@ -6,11 +6,14 @@ import 'package:gnade_app/src/features/customers/presentation/screens/select_cus
 import 'package:gnade_app/src/features/customers/presentation/screens/add_customer_screen.dart';
 import '../features/products/presentation/screens/add_product_screen.dart';
 import '../features/products/presentation/screens/edit_product_screen.dart';
+import '../features/products/presentation/screens/add_stock_screen.dart';
 import 'package:gnade_app/src/features/team/presentation/screens/team_screen.dart';
 import 'package:gnade_app/src/features/team/presentation/screens/add_member_screen.dart';
 import 'package:gnade_app/src/features/team/presentation/screens/edit_member_screen.dart';
 import 'package:gnade_app/src/features/team/domain/entities/staff_member.dart';
 import 'package:gnade_app/src/features/auth/presentation/screens/employee_login_screen.dart';
+import 'package:gnade_app/src/features/printing/presentation/screens/saved_printers_screen.dart';
+import 'package:gnade_app/src/features/printing/presentation/screens/add_printer_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -210,6 +213,15 @@ final GoRouter appRouter = GoRouter(
                     return PurchaseDetailsScreen(id: id);
                   },
                 ),
+                GoRoute(
+                  path: 'add-stock',
+                  name: 'addStock',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    final product = state.extra as Product;
+                    return AddStockScreen(product: product);
+                  },
+                ),
               ],
             ),
           ],
@@ -272,11 +284,35 @@ final GoRouter appRouter = GoRouter(
                     ),
                   ],
                 ),
+                GoRoute(
+                  path: 'saved-printers',
+                  name: 'savedPrinters',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const SavedPrintersScreen(),
+                ),
+                GoRoute(
+                  path: 'add-printer',
+                  name: 'addPrinter',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const AddPrinterScreen(),
+                ),
               ],
             ),
           ],
         ),
       ],
+    ),
+    GoRoute(
+      path: AppRoutes.suppliers,
+      name: 'suppliers',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => const SuppliersScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.addSupplier,
+      name: 'addSupplier',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => const AddSupplierScreen(),
     ),
   ],
 );

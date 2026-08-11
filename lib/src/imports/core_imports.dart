@@ -34,6 +34,8 @@ export '../features/sales/presentation/screens/new_sale_screen.dart';
 export '../features/products/presentation/screens/products_screen.dart';
 export '../features/products/presentation/screens/product_details_screen.dart';
 export '../features/products/presentation/screens/supplier_details_screen.dart';
+export '../features/suppliers/presentation/screens/suppliers_screen.dart';
+export '../features/suppliers/presentation/screens/add_supplier_screen.dart';
 export '../features/products/presentation/screens/purchase_details_screen.dart';
 export '../features/customers/presentation/screens/customers_screen.dart';
 export '../features/customers/presentation/screens/customer_details_screen.dart';

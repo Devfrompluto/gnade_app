@@ -417,6 +417,8 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       lowStockAt: double.parse(_lowStockController.text),
       unit: _selectedUnit,
       expiryDate: _expiryDate,
+      supplierId: _selectedSupplier?.id,
+      supplierName: _selectedSupplier?.name,
     );
     setState(() => _isLoading = false);
     if (res != null) {

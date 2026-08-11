@@ -54,54 +54,77 @@ class NotificationsScreen extends ConsumerWidget {
 
             // 2. Notifications Simple Grouped List
             Expanded(
-              child: groupedAsync.when(
-                loading: () => const Center(child: AppLoading()),
-                error: (err, stack) => AppErrorWidget(
-                  message: 'Could not load notifications',
-                  onRetry: () => ref.read(notificationsListProvider.notifier).loadNotifications(),
-                ),
-                data: (groupedMap) {
-                  if (groupedMap.isEmpty) {
-                    return const AppEmptyState(
-                      title: 'No notifications',
-                      subtitle: 'You are all caught up! New alerts will appear here.',
-                    );
-                  }
-
-                  return ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding.w),
-                    itemCount: groupedMap.keys.length,
-                    itemBuilder: (context, sectionIndex) {
-                      final sectionKey = groupedMap.keys.elementAt(sectionIndex);
-                      final items = groupedMap[sectionKey]!;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Section Header (e.g. Today, Yesterday)
-                          Padding(
-                            padding: EdgeInsets.only(left: 4.w, top: 12.h, bottom: 8.h),
-                            child: Text(
-                              sectionKey,
-                              style: TextStyle(
-                                color: const Color(0xFF0F172A),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16.sp,
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(notificationsListProvider.notifier).loadNotifications(),
+                child: groupedAsync.when(
+                  loading: () => const Center(child: AppLoading()),
+                  error: (err, stack) => SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: 400.h,
+                      child: AppErrorWidget(
+                        message: 'Could not load notifications',
+                        onRetry: () => ref.read(notificationsListProvider.notifier).loadNotifications(),
+                      ),
+                    ),
+                  ),
+                  data: (groupedMap) {
+                    if (groupedMap.isEmpty) {
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
+                              ),
+                              child: const Center(
+                                child: AppEmptyState(
+                                  title: 'No notifications',
+                                  subtitle: 'You are all caught up! New alerts will appear here.',
+                                ),
                               ),
                             ),
-                          ),
-
-                          // Notification tiles in section
-                          ...items.map((item) => NotificationTile(
-                                key: ValueKey(item.id),
-                                item: item,
-                              )),
-                        ],
+                          );
+                        },
                       );
-                    },
-                  );
-                },
+                    }
+
+                    return ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding.w),
+                      itemCount: groupedMap.keys.length,
+                      itemBuilder: (context, sectionIndex) {
+                        final sectionKey = groupedMap.keys.elementAt(sectionIndex);
+                        final items = groupedMap[sectionKey]!;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Section Header (e.g. Today, Yesterday)
+                            Padding(
+                              padding: EdgeInsets.only(left: 4.w, top: 12.h, bottom: 8.h),
+                              child: Text(
+                                sectionKey,
+                                style: TextStyle(
+                                  color: const Color(0xFF0F172A),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.sp,
+                                ),
+                              ),
+                            ),
+
+                            // Notification tiles in section
+                            ...items.map((item) => NotificationTile(
+                                  key: ValueKey(item.id),
+                                  item: item,
+                                )),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ],

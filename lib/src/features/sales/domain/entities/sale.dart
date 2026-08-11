@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:intl/intl.dart';
 import 'sale_item.dart';
+import 'sale_payment.dart';
 
 class Sale extends Equatable {
   final String id;
@@ -13,7 +14,9 @@ class Sale extends Equatable {
   final String status; // paid | partial | debt
   final String invoiceNo;
   final DateTime createdAt;
+  final String? cashierName;
   final List<SaleItem>? items;
+  final List<SalePayment>? payments;
 
   const Sale({
     required this.id,
@@ -26,7 +29,9 @@ class Sale extends Equatable {
     required this.status,
     required this.invoiceNo,
     required this.createdAt,
+    this.cashierName,
     this.items,
+    this.payments,
   });
 
   bool get isPaid => status.toLowerCase() == 'paid';
@@ -36,7 +41,7 @@ class Sale extends Equatable {
   // Compatibility getters for SaleCard
   String get invoice => invoiceNo;
   String get time => DateFormat('hh:mm a').format(createdAt);
-  String get cashier => 'Staff';
+  String get cashier => (cashierName != null && cashierName!.trim().isNotEmpty) ? cashierName! : 'Staff';
   String get amount => '₦ ${NumberFormat('#,##0').format(totalAmount)}';
   String get customer => customerName;
   String get date => DateFormat('MMM d, yyyy • HH:mm').format(createdAt);
@@ -53,6 +58,7 @@ class Sale extends Equatable {
         status,
         invoiceNo,
         createdAt,
+        cashierName,
         items,
       ];
 }

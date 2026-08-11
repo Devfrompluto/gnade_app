@@ -279,6 +279,8 @@ class ProductsListNotifier extends StateNotifier<List<Product>> {
     required double lowStockAt,
     required String unit,
     DateTime? expiryDate,
+    String? supplierId,
+    String? supplierName,
   }) async {
     if (_businessId == null) return null;
     final result = await _repository.createProduct(
@@ -292,6 +294,8 @@ class ProductsListNotifier extends StateNotifier<List<Product>> {
       lowStockAt: lowStockAt,
       unit: unit,
       expiryDate: expiryDate,
+      supplierId: supplierId,
+      supplierName: supplierName,
     );
     return result.fold(
       (failure) {
@@ -316,6 +320,8 @@ class ProductsListNotifier extends StateNotifier<List<Product>> {
     required double lowStockAt,
     required String unit,
     DateTime? expiryDate,
+    String? supplierId,
+    String? supplierName,
   }) async {
     final result = await _repository.updateProduct(
       productId: productId,
@@ -328,6 +334,8 @@ class ProductsListNotifier extends StateNotifier<List<Product>> {
       lowStockAt: lowStockAt,
       unit: unit,
       expiryDate: expiryDate,
+      supplierId: supplierId,
+      supplierName: supplierName,
     );
     return result.fold(
       (failure) {

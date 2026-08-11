@@ -65,21 +65,52 @@ class SaleCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 6.w),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-                    decoration: BoxDecoration(
-                      color: sale.isPaid ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(4.r),
-                    ),
-                    child: Text(
-                      sale.isPaid ? 'PAID' : 'UNPAID',
-                      style: TextStyle(
-                        color: sale.isPaid ? const Color(0xFF059669) : const Color(0xFFDC2626),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 9.sp,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final rawStatus = sale.status.toLowerCase();
+                      String statusText;
+                      Color bg;
+                      Color fg;
+
+                      if (rawStatus == 'paid') {
+                        statusText = 'PAID';
+                        bg = const Color(0xFFECFDF5);
+                        fg = const Color(0xFF059669);
+                      } else if (rawStatus == 'refunded') {
+                        statusText = 'RETURNED';
+                        bg = const Color(0xFFF3E8FF);
+                        fg = const Color(0xFF9333EA);
+                      } else if (rawStatus == 'partial_refund') {
+                        statusText = 'P. RETURN';
+                        bg = const Color(0xFFFEF3C7);
+                        fg = const Color(0xFFD97706);
+                      } else if (rawStatus == 'partial') {
+                        statusText = 'PARTIAL';
+                        bg = const Color(0xFFFFF7ED);
+                        fg = const Color(0xFFD97706);
+                      } else {
+                        statusText = 'UNPAID';
+                        bg = const Color(0xFFFEF2F2);
+                        fg = const Color(0xFFDC2626);
+                      }
+
+                      return Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                        decoration: BoxDecoration(
+                          color: bg,
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                        child: Text(
+                          statusText,
+                          style: TextStyle(
+                            color: fg,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9.sp,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

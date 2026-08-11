@@ -38,6 +38,8 @@ class ProductRepositoryImpl implements ProductRepository {
     required double lowStockAt,
     required String unit,
     DateTime? expiryDate,
+    String? supplierId,
+    String? supplierName,
   }) async {
     try {
       final response = await _supabaseClient.from('products').insert({
@@ -51,6 +53,8 @@ class ProductRepositoryImpl implements ProductRepository {
         'low_stock_at': lowStockAt.toInt(),
         'unit': unit,
         'expiry_date': expiryDate?.toIso8601String(),
+        'supplier_id': supplierId,
+        'supplier_name': supplierName,
       }).select().single();
 
       return right<Failure, Product>(ProductModel.fromMap(response));
@@ -110,6 +114,8 @@ class ProductRepositoryImpl implements ProductRepository {
     required double lowStockAt,
     required String unit,
     DateTime? expiryDate,
+    String? supplierId,
+    String? supplierName,
   }) async {
     try {
       final response = await _supabaseClient.from('products').update({
@@ -122,6 +128,8 @@ class ProductRepositoryImpl implements ProductRepository {
         'low_stock_at': lowStockAt.toInt(),
         'unit': unit,
         'expiry_date': expiryDate?.toIso8601String(),
+        'supplier_id': supplierId,
+        'supplier_name': supplierName,
       }).eq('id', productId).select().single();
 
       return right<Failure, Product>(ProductModel.fromMap(response));

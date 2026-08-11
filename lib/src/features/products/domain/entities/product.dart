@@ -14,6 +14,8 @@ class Product extends Equatable {
   final double lowStockAt;
   final String unit;
   final DateTime? expiryDate;
+  final String? rawSupplierId;
+  final String? rawSupplierName;
   final DateTime createdAt;
 
   const Product({
@@ -28,6 +30,8 @@ class Product extends Equatable {
     required this.lowStockAt,
     required this.unit,
     this.expiryDate,
+    this.rawSupplierId,
+    this.rawSupplierName,
     required this.createdAt,
   });
 
@@ -46,8 +50,8 @@ class Product extends Equatable {
     return StockStatus.inStock;
   }
 
-  String get supplier => 'None';
-  String get supplierId => '';
+  String get supplier => (rawSupplierName != null && rawSupplierName!.isNotEmpty) ? rawSupplierName! : 'None';
+  String get supplierId => rawSupplierId ?? '';
   String get lastUpdated => 'Recently';
 
   String get initials {
@@ -81,6 +85,8 @@ class Product extends Equatable {
         lowStockAt,
         unit,
         expiryDate,
+        rawSupplierId,
+        rawSupplierName,
         createdAt,
       ];
 }

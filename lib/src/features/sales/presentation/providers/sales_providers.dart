@@ -1,6 +1,7 @@
 import 'package:gnade_app/src/imports/imports.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../auth/presentation/providers/session_provider.dart';
+import '../../../auth/domain/entities/user.dart';
 import '../../data/repositories/sales_repository_impl.dart';
 
 final salesRepositoryProvider = Provider<SalesRepository>((ref) {
@@ -12,6 +13,9 @@ final salesDateFilterProvider = StateProvider<int>((ref) => 0);
 
 // Custom Date Range Provider (for Custom Date Filter option)
 final salesCustomDateRangeProvider = StateProvider<DateTimeRange?>((ref) => null);
+
+// Selected Cashier Filter Provider ('All' or specific cashier name)
+final selectedCashierFilterProvider = StateProvider<String>((ref) => 'All');
 
 // Helpers to get start and end dates based on current filter index
 Map<String, DateTime> resolveSalesDateRange(int filterIndex, DateTimeRange? customRange) {
@@ -111,8 +115,10 @@ final saleDetailsProvider = FutureProvider.family<Sale, String>((ref, saleId) as
 class SalesCheckoutNotifier extends StateNotifier<AsyncValue<Sale?>> {
   final SalesRepository _repository;
   final String? _businessId;
+  final AppUser? _user;
 
-  SalesCheckoutNotifier(this._repository, this._businessId) : super(const AsyncValue.data(null));
+  SalesCheckoutNotifier(this._repository, this._businessId, this._user)
+      : super(const AsyncValue.data(null));
 
   Future<Sale?> recordSale({
     required String customerName,
@@ -123,11 +129,19 @@ class SalesCheckoutNotifier extends StateNotifier<AsyncValue<Sale?>> {
     required String status,
     required String invoiceNo,
     required List<Map<String, dynamic>> items,
+    String? cashierName,
   }) async {
     if (_businessId == null) {
       state = AsyncValue.error(Exception('No active business ID found'), StackTrace.current);
       return null;
     }
+
+    final String resolvedCashier = cashierName ??
+        ((_user?.name != null && _user!.name!.trim().isNotEmpty)
+            ? _user.name!.trim()
+            : (_user?.role != null && _user!.role!.trim().isNotEmpty
+                ? _user.role![0].toUpperCase() + _user.role!.substring(1).toLowerCase()
+                : 'Staff'));
 
     state = const AsyncValue.loading();
     final result = await _repository.createSale(
@@ -140,6 +154,7 @@ class SalesCheckoutNotifier extends StateNotifier<AsyncValue<Sale?>> {
       status: status,
       invoiceNo: invoiceNo,
       items: items,
+      cashierName: resolvedCashier,
     );
 
     return result.fold(
@@ -163,5 +178,6 @@ final salesCheckoutProvider = StateNotifierProvider<SalesCheckoutNotifier, Async
   final repo = ref.watch(salesRepositoryProvider);
   final session = ref.watch(sessionProvider);
   final businessId = session.user?.businessId;
-  return SalesCheckoutNotifier(repo, businessId);
+  final user = session.user;
+  return SalesCheckoutNotifier(repo, businessId, user);
 });

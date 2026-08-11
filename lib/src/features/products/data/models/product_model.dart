@@ -13,6 +13,8 @@ class ProductModel extends Product {
     required super.lowStockAt,
     required super.unit,
     super.expiryDate,
+    super.rawSupplierId,
+    super.rawSupplierName,
     required super.createdAt,
   });
 
@@ -29,6 +31,8 @@ class ProductModel extends Product {
       lowStockAt: double.tryParse(map['low_stock_at']?.toString() ?? '') ?? 0.0,
       unit: map['unit']?.toString() ?? 'pcs',
       expiryDate: map['expiry_date'] != null ? DateTime.tryParse(map['expiry_date'].toString()) : null,
+      rawSupplierId: map['supplier_id']?.toString(),
+      rawSupplierName: map['supplier_name']?.toString() ?? map['supplier']?.toString(),
       createdAt: map['created_at'] != null 
           ? (DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()) 
           : DateTime.now(),
@@ -48,6 +52,8 @@ class ProductModel extends Product {
       'low_stock_at': lowStockAt,
       'unit': unit,
       'expiry_date': expiryDate?.toIso8601String(),
+      'supplier_id': rawSupplierId,
+      'supplier_name': rawSupplierName,
       'created_at': createdAt.toIso8601String(),
     };
   }

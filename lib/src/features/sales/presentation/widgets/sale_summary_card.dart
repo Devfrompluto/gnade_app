@@ -9,24 +9,33 @@ class SaleSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rawStatus = sale.status.toLowerCase();
-    final String paymentStatus = rawStatus == 'paid' 
-        ? 'Paid' 
-        : (rawStatus == 'partial' ? 'Partial' : 'Unpaid');
+    String paymentStatus;
+    Color statusBg;
+    Color statusText;
 
-    final bool isPaid = paymentStatus == 'Paid';
-    final bool isPartial = paymentStatus == 'Partial';
+    if (rawStatus == 'paid') {
+      paymentStatus = 'Paid';
+      statusBg = const Color(0xFFECFDF5);
+      statusText = const Color(0xFF059669);
+    } else if (rawStatus == 'refunded') {
+      paymentStatus = 'Returned';
+      statusBg = const Color(0xFFF3E8FF);
+      statusText = const Color(0xFF9333EA);
+    } else if (rawStatus == 'partial_refund') {
+      paymentStatus = 'P. Returned';
+      statusBg = const Color(0xFFFEF3C7);
+      statusText = const Color(0xFFD97706);
+    } else if (rawStatus == 'partial') {
+      paymentStatus = 'Partial';
+      statusBg = const Color(0xFFFFF7ED);
+      statusText = const Color(0xFFD97706);
+    } else {
+      paymentStatus = 'Unpaid';
+      statusBg = const Color(0xFFFEF2F2);
+      statusText = const Color(0xFFDC2626);
+    }
 
-    final Color statusBg = isPaid
-        ? const Color(0xFFECFDF5)
-        : isPartial
-            ? const Color(0xFFFFF7ED)
-            : const Color(0xFFFEE2E2);
-
-    final Color statusText = isPaid
-        ? const Color(0xFF059669)
-        : isPartial
-            ? const Color(0xFFD97706)
-            : const Color(0xFFDC2626);
+    final bool isPaid = rawStatus == 'paid';
 
     String displayPaymentMethod = sale.paymentMethod;
     if (displayPaymentMethod.toLowerCase() == 'cash') {
@@ -96,7 +105,7 @@ class SaleSummaryCard extends StatelessWidget {
                 SizedBox(height: 14.h),
                 _buildDetailRow('Payment method', displayPaymentMethod, isValueGray: false),
                 SizedBox(height: 14.h),
-                _buildDetailRow('Staff', sale.cashier, isValueBold: true),
+                _buildDetailRow('Cashier', sale.cashier, isValueBold: true),
               ],
             ),
           ),

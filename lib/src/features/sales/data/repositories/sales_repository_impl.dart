@@ -17,7 +17,7 @@ class SalesRepositoryImpl implements SalesRepository {
     return runTask(() async {
       var query = _supabaseClient
           .from('sales')
-          .select('*, sale_items(*)')
+          .select('*, sale_items(*), sale_payments(*)')
           .eq('business_id', businessId)
           .gte('created_at', startDate.toIso8601String())
           .lte('created_at', endDate.toIso8601String());
@@ -92,6 +92,7 @@ class SalesRepositoryImpl implements SalesRepository {
     required String status,
     required String invoiceNo,
     required List<Map<String, dynamic>> items,
+    String? cashierName,
   }) async {
     return runTask(() async {
       // 1. Insert sale record
@@ -104,6 +105,7 @@ class SalesRepositoryImpl implements SalesRepository {
         'payment_method': paymentMethod,
         'status': status,
         'invoice_no': invoiceNo,
+        if (cashierName != null) 'cashier_name': cashierName,
       }).select().single();
 
       final String saleId = saleResponse['id'];
@@ -122,7 +124,19 @@ class SalesRepositoryImpl implements SalesRepository {
 
       await _supabaseClient.from('sale_items').insert(itemsToInsert);
 
-      // 3. Decrement stock atomically for each product using RPC
+      // 3. Insert initial payment audit record in sale_payments
+      if (amountPaid > 0) {
+        await _supabaseClient.from('sale_payments').insert({
+          'sale_id': saleId,
+          'business_id': businessId,
+          'amount': amountPaid,
+          'payment_method': paymentMethod.toLowerCase(),
+          'type': 'payment',
+          'note': 'Initial Payment',
+        });
+      }
+
+      // 4. Decrement stock atomically for each product using RPC
       for (final item in items) {
         final productId = item['productId'];
         final quantity = item['quantity'] as double;
@@ -134,10 +148,10 @@ class SalesRepositoryImpl implements SalesRepository {
         }
       }
 
-      // Return the saved sale with items
+      // Return the saved sale with items and payment history
       final finalResponse = await _supabaseClient
           .from('sales')
-          .select('*, sale_items(*)')
+          .select('*, sale_items(*), sale_payments(*)')
           .eq('id', saleId)
           .single();
 
@@ -150,11 +164,173 @@ class SalesRepositoryImpl implements SalesRepository {
     return runTask(() async {
       final response = await _supabaseClient
           .from('sales')
-          .select('*, sale_items(*)')
+          .select('*, sale_items(*), sale_payments(*)')
           .eq('id', saleId)
           .single();
 
       return SaleModel.fromMap(response);
+    }, requiresNetwork: true);
+  }
+
+  @override
+  FutureEither<Sale> recordPayment({
+    required String saleId,
+    required double paymentAmount,
+    required String paymentMethod,
+    String? reference,
+    DateTime? paymentDate,
+  }) async {
+    return runTask(() async {
+      final currentResponse = await _supabaseClient
+          .from('sales')
+          .select('amount_paid, total_amount, status, business_id')
+          .eq('id', saleId)
+          .single();
+
+      final currentAmountPaid = double.tryParse(currentResponse['amount_paid']?.toString() ?? '0') ?? 0.0;
+      final totalAmount = double.tryParse(currentResponse['total_amount']?.toString() ?? '0') ?? 0.0;
+      final businessId = currentResponse['business_id']?.toString();
+
+      final newAmountPaid = currentAmountPaid + paymentAmount;
+      final String newStatus = newAmountPaid >= totalAmount
+          ? 'paid'
+          : (newAmountPaid > 0 ? 'partial' : 'debt');
+
+      await _supabaseClient.from('sales').update({
+        'amount_paid': newAmountPaid,
+        'status': newStatus,
+        'payment_method': paymentMethod.toLowerCase(),
+      }).eq('id', saleId);
+
+      // Audit log in sale_payments
+      await _supabaseClient.from('sale_payments').insert({
+        'sale_id': saleId,
+        if (businessId != null) 'business_id': businessId,
+        'amount': paymentAmount,
+        'payment_method': paymentMethod.toLowerCase(),
+        'type': 'payment',
+        'note': reference != null && reference.isNotEmpty ? 'Payment ($reference)' : 'Payment Received',
+      });
+
+      final updatedResponse = await _supabaseClient
+          .from('sales')
+          .select('*, sale_items(*), sale_payments(*)')
+          .eq('id', saleId)
+          .single();
+
+      return SaleModel.fromMap(updatedResponse);
+    }, requiresNetwork: true);
+  }
+
+  @override
+  FutureEither<Sale> refundSale({
+    required String saleId,
+    required List<Map<String, dynamic>> refundedItems,
+    required bool isFullRefund,
+    required String reason,
+  }) async {
+    return runTask(() async {
+      // 1. Restock products into inventory using RPC
+      for (final item in refundedItems) {
+        final productId = item['productId'];
+        final qty = (item['quantity'] as num).toInt();
+        if (productId != null && qty > 0) {
+          await _supabaseClient.rpc<void>('increment_stock', params: {
+            'product_id': productId,
+            'qty': qty,
+          });
+        }
+      }
+
+      // 2. Fetch current sale_items from DB and update line item quantities & totals
+      final existingSaleItems = List<Map<String, dynamic>>.from(
+        await _supabaseClient
+            .from('sale_items')
+            .select('*')
+            .eq('sale_id', saleId),
+      );
+
+      for (final saleItem in existingSaleItems) {
+        final productId = saleItem['product_id'];
+        final productName = saleItem['product_name'];
+        final currentQty = double.tryParse(saleItem['quantity']?.toString() ?? '0') ?? 0.0;
+        final unitPrice = double.tryParse(saleItem['unit_price']?.toString() ?? '0') ?? 0.0;
+
+        // Find match in refundedItems
+        final refItem = refundedItems.firstWhere(
+          (r) => (r['productId'] != null && r['productId'] == productId) || (r['productName'] == productName),
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (refItem.isNotEmpty) {
+          final refundedQty = (refItem['quantity'] as num).toDouble();
+          final newQty = (currentQty - refundedQty).clamp(0.0, double.infinity);
+          final newTotal = newQty * unitPrice;
+
+          await _supabaseClient.from('sale_items').update({
+            'quantity': newQty.toInt(),
+            'total': newTotal,
+          }).eq('id', saleItem['id']);
+        }
+      }
+
+      // 3. Fetch current sale details
+      final currentResponse = await _supabaseClient
+          .from('sales')
+          .select('total_amount, amount_paid, status, business_id')
+          .eq('id', saleId)
+          .single();
+
+      final currentTotalAmount = double.tryParse(currentResponse['total_amount']?.toString() ?? '0') ?? 0.0;
+      final currentAmountPaid = double.tryParse(currentResponse['amount_paid']?.toString() ?? '0') ?? 0.0;
+      final businessId = currentResponse['business_id']?.toString();
+
+      double refundTotal = 0;
+      for (final item in refundedItems) {
+        final qty = (item['quantity'] as num).toDouble();
+        final unitPrice = (item['unitPrice'] as num).toDouble();
+        refundTotal += qty * unitPrice;
+      }
+
+      final newTotalAmount = (currentTotalAmount - refundTotal).clamp(0.0, double.infinity);
+
+      String newStatus;
+      double newAmountPaid;
+
+      if (isFullRefund || newTotalAmount <= 0) {
+        newStatus = 'refunded';
+        newAmountPaid = 0;
+      } else {
+        newAmountPaid = currentAmountPaid > newTotalAmount ? newTotalAmount : currentAmountPaid;
+        newStatus = 'partial_refund';
+      }
+
+      // 4. Update sale header in Supabase
+      await _supabaseClient.from('sales').update({
+        'total_amount': newTotalAmount,
+        'amount_paid': newAmountPaid,
+        'status': newStatus,
+      }).eq('id', saleId);
+
+      // 5. Audit log refund entry in sale_payments
+      if (refundTotal > 0) {
+        await _supabaseClient.from('sale_payments').insert({
+          'sale_id': saleId,
+          if (businessId != null) 'business_id': businessId,
+          'amount': -refundTotal,
+          'payment_method': 'refund',
+          'type': 'refund',
+          'note': reason,
+        });
+      }
+
+      final updatedResponse = await _supabaseClient
+          .from('sales')
+          .select('*, sale_items(*), sale_payments(*)')
+          .eq('id', saleId)
+          .single();
+
+      return SaleModel.fromMap(updatedResponse);
     }, requiresNetwork: true);
   }
 }

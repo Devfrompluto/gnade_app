@@ -1,5 +1,6 @@
 import '../../domain/entities/sale.dart';
 import 'sale_item_model.dart';
+import 'sale_payment_model.dart';
 
 class SaleModel extends Sale {
   const SaleModel({
@@ -13,7 +14,9 @@ class SaleModel extends Sale {
     required super.status,
     required super.invoiceNo,
     required super.createdAt,
+    super.cashierName,
     super.items,
+    super.payments,
   });
 
   factory SaleModel.fromMap(Map<String, dynamic> map) {
@@ -23,6 +26,14 @@ class SaleModel extends Sale {
           .map((item) => SaleItemModel.fromMap(item as Map<String, dynamic>))
           .toList();
     }
+
+    List<SalePaymentModel>? mappedPayments;
+    if (map['sale_payments'] != null) {
+      mappedPayments = (map['sale_payments'] as List)
+          .map((p) => SalePaymentModel.fromMap(p as Map<String, dynamic>))
+          .toList();
+    }
+
     return SaleModel(
       id: map['id']?.toString() ?? '',
       businessId: map['business_id']?.toString() ?? '',
@@ -36,7 +47,9 @@ class SaleModel extends Sale {
       createdAt: map['created_at'] != null 
           ? DateTime.parse(map['created_at'].toString()) 
           : DateTime.now(),
+      cashierName: map['cashier_name']?.toString(),
       items: mappedItems,
+      payments: mappedPayments,
     );
   }
 
@@ -52,6 +65,7 @@ class SaleModel extends Sale {
       'status': status,
       'invoice_no': invoiceNo,
       'created_at': createdAt.toIso8601String(),
+      if (cashierName != null) 'cashier_name': cashierName,
     };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 import '../providers/products_providers.dart';
+import '../../../suppliers/presentation/providers/suppliers_providers.dart';
 import '../widgets/supplier_profile_card.dart';
 import '../widgets/supplier_metrics_row.dart';
 import '../widgets/supplier_purchases_list.dart';
@@ -16,10 +17,53 @@ class SupplierDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final suppliers = ref.watch(suppliersListProvider);
-    final supplier = suppliers.firstWhere(
-      (s) => s.id == id,
-      orElse: () => suppliers.first,
-    );
+    final newSuppliers = ref.watch(suppliersProvider).value ?? [];
+
+    SupplierMock? foundSupplier;
+
+    for (final s in suppliers) {
+      if (s.id == id) {
+        foundSupplier = s;
+        break;
+      }
+    }
+
+    if (foundSupplier == null) {
+      for (final s in newSuppliers) {
+        if (s.id == id) {
+          foundSupplier = SupplierMock(
+            id: s.id,
+            name: s.name,
+            phone: s.phone,
+            supplyValue: '₦ ${NumberFormat('#,##0').format(s.supplyValue)}',
+            debtAmount: '₦ ${NumberFormat('#,##0').format(s.debtAmount)}',
+            purchases: const [],
+          );
+          break;
+        }
+      }
+    }
+
+    final supplier = foundSupplier ??
+        (suppliers.isNotEmpty
+            ? suppliers.first
+            : (newSuppliers.isNotEmpty
+                ? SupplierMock(
+                    id: newSuppliers.first.id,
+                    name: newSuppliers.first.name,
+                    phone: newSuppliers.first.phone,
+                    supplyValue: '₦ ${NumberFormat('#,##0').format(newSuppliers.first.supplyValue)}',
+                    debtAmount: '₦ ${NumberFormat('#,##0').format(newSuppliers.first.debtAmount)}',
+                    purchases: const [],
+                  )
+                : const SupplierMock(
+                    id: 'default',
+                    name: 'Supplier',
+                    phone: '+2340000000000',
+                    supplyValue: '₦ 0',
+                    debtAmount: '₦ 0',
+                    purchases: [],
+                  )));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // light slate gray background

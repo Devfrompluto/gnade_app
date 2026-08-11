@@ -41,8 +41,13 @@ abstract final class AppRoutes {
   static const String editProduct = '/products/edit';
   static const String productDetails = '/products/details';
   static const String supplierDetails = '/products/supplier';
+  static const String suppliers = '/suppliers';
+  static const String addSupplier = '/suppliers/add';
   static const String purchaseDetails = '/products/purchase';
   static const String customerDetails = '/customers/details';
+  static const String addStock = '/products/add-stock';
+  static const String savedPrinters = '/more/saved-printers';
+  static const String addPrinter = '/more/add-printer';
 }
 
 

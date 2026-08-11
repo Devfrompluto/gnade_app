@@ -4,10 +4,12 @@ import 'package:gnade_app/src/imports/packages_imports.dart';
 import '../providers/sales_providers.dart';
 import '../../../auth/presentation/providers/session_provider.dart';
 import '../widgets/cart_item_tile.dart';
-import '../widgets/payment_method_selector.dart';
-import '../widgets/payment_status_selector.dart';
 import '../widgets/customer_selection_card.dart';
 import '../widgets/adjustments_card.dart';
+import '../widgets/sale_payment_details_card.dart';
+import '../widgets/sale_summary_bottom_bar.dart';
+import '../widgets/complete_sale_sheet.dart';
+import '../../../products/presentation/providers/products_providers.dart';
 
 class NewSaleScreen extends ConsumerStatefulWidget {
   final List<Product> selectedItems;
@@ -251,216 +253,58 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                       onRemove: () {
                         setState(() {
                           _selectedCustomer = 'None';
+                          if (_paymentMethod == 'Credit') {
+                            _paymentMethod = 'Cash';
+                          }
+                          _paymentStatus = 'Paid';
                         });
                       },
                     ),
                     SizedBox(height: 20.h),
 
                     // ─── Payment Details ─────────────────────────────────────
-                    Container(
-                      padding: EdgeInsets.all(12.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: const Color(0xFFF1F5F9),
-                          width: 1.2,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Payment Details',
-                            style: TextStyle(
-                              color: const Color(0xFF1E293B),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.sp,
-                            ),
-                          ),
-                          SizedBox(height: 12.h),
-
-                          // Payment Method Title
-                          Text(
-                            'Payment Method',
-                            style: TextStyle(
-                              color: const Color(0xFF64748B),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11.sp,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          PaymentMethodSelector(
-                            selectedMethod: _paymentMethod,
-                            onMethodChanged: (method) {
-                              setState(() {
-                                _paymentMethod = method;
-                                if (method == 'Credit') {
-                                  _paymentStatus = 'Unpaid';
-                                } else {
-                                  _paymentStatus = 'Paid';
-                                }
-                              });
-                            },
-                          ),
-                          if (_paymentMethod != 'Credit') ...[
-                            SizedBox(height: 16.h),
-                            // Payment Status Title
-                            Text(
-                              'Payment Status',
-                              style: TextStyle(
-                                color: const Color(0xFF64748B),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11.sp,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            PaymentStatusSelector(
-                              selectedStatus: _paymentStatus,
-                              onStatusChanged: (status) {
-                                setState(() {
-                                  _paymentStatus = status;
-                                  // Default amount paid for Partial
-                                  if (status == 'Partial') {
-                                    _amountPaidController.text = '';
-                                  }
-                                });
-                              },
-                            ),
-                            SizedBox(height: 16.h),
-                          ],
-
-                          // ─── Conditional Partial payment inputs ─────────────
-                          if (_paymentStatus == 'Partial') ...[
-                            Text(
-                              'Amount Paid',
-                              style: TextStyle(
-                                color: const Color(0xFF64748B),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11.sp,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Container(
-                              height: 40.h,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC), // soft input bg
-                                borderRadius: BorderRadius.circular(8.r),
-                                border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
-                                  width: 1,
-                                ),
-                              ),
-                              child: TextField(
-                                controller: _amountPaidController,
-                                keyboardType: TextInputType.number,
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1E293B),
-                                ),
-                                onChanged: (_) => setState(() {}),
-                                decoration: InputDecoration(
-                                  prefixIcon: Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 10.h),
-                                    child: Text(
-                                      '₦',
-                                      style: TextStyle(
-                                        color: const Color(0xFF1E293B),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13.sp,
-                                      ),
-                                    ),
-                                  ),
-                                  filled: false,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 10.h),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 12.h),
-
-                            // Balance Owed Banner (Red)
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEF2F2),
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Balance Owed',
-                                    style: TextStyle(
-                                      color: const Color(0xFFDC2626),
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 11.sp,
-                                    ),
-                                  ),
-                                  Text(
-                                    '₦ ${balanceOwed > 0 ? balanceOwed.toStringAsFixed(2) : "0.00"}',
-                                    style: TextStyle(
-                                      color: const Color(0xFFDC2626),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12.sp,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (_paymentStatus == 'Unpaid') ...[
-                            // Unpaid Owed Banner (Red)
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEF2F2),
-                                borderRadius: BorderRadius.circular(8.r),
-                                border: Border.all(
-                                  color: const Color(0xFFFCA5A5),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.warning_amber_rounded,
-                                    color: const Color(0xFFDC2626),
-                                    size: 16.sp,
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  Expanded(
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'Balance Owed (Unpaid)',
-                                          style: TextStyle(
-                                            color: const Color(0xFFDC2626),
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 11.sp,
-                                          ),
-                                        ),
-                                        Text(
-                                          '₦ ${total.toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            color: const Color(0xFFDC2626),
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12.sp,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                    SalePaymentDetailsCard(
+                      paymentMethod: _paymentMethod,
+                      paymentStatus: _paymentStatus,
+                      amountPaidController: _amountPaidController,
+                      total: total,
+                      balanceOwed: balanceOwed,
+                      isCustomerSelected: _selectedCustomer != 'None' && _selectedCustomer.isNotEmpty,
+                      onMethodChanged: (method) {
+                        final hasCustomer = _selectedCustomer != 'None' && _selectedCustomer.isNotEmpty;
+                        if (method == 'Credit' && !hasCustomer) {
+                          showGlobalToast(
+                            message: 'Please select a customer first to sell on credit',
+                            status: 'warning',
+                          );
+                          return;
+                        }
+                        setState(() {
+                          _paymentMethod = method;
+                          if (method == 'Credit') {
+                            _paymentStatus = 'Unpaid';
+                          } else {
+                            _paymentStatus = 'Paid';
+                          }
+                        });
+                      },
+                      onStatusChanged: (status) {
+                        final hasCustomer = _selectedCustomer != 'None' && _selectedCustomer.isNotEmpty;
+                        if ((status == 'Partial' || status == 'Unpaid') && !hasCustomer) {
+                          showGlobalToast(
+                            message: 'Please select a customer first to allow partial or unpaid sales',
+                            status: 'warning',
+                          );
+                          return;
+                        }
+                        setState(() {
+                          _paymentStatus = status;
+                          if (status == 'Partial') {
+                            _amountPaidController.text = '';
+                          }
+                        });
+                      },
+                      onAmountChanged: () => setState(() {}),
                     ),
                     SizedBox(height: 20.h),
 
@@ -501,213 +345,19 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
             ),
 
             // ─── Summary section & Complete Sale button ──────────────────────
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.pagePadding.w,
-                vertical: 12.h,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -3),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Subtotal row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Subtotal',
-                          style: TextStyle(
-                            color: const Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12.sp,
-                          ),
-                        ),
-                        Text(
-                          '₦ ${subtotal.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: const Color(0xFF1E293B),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12.sp,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4.h),
-
-                    // Discount row (if discount > 0)
-                    if (discount > 0) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Discount',
-                            style: TextStyle(
-                              color: const Color(0xFFEF4444),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                          Text(
-                            '- ₦ ${discount.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              color: const Color(0xFFEF4444),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4.h),
-                    ],
-
-                    // Tax row (if tax > 0)
-                    if (tax > 0) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Tax (${_taxController.text}%)',
-                            style: TextStyle(
-                              color: const Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                          Text(
-                            '₦ ${tax.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              color: const Color(0xFF1E293B),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 6.h),
-                    ],
-
-                    const Divider(color: Color(0xFFE2E8F0), height: 1),
-                    SizedBox(height: 8.h),
-
-                    // Total Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Total',
-                          style: TextStyle(
-                            color: const Color(0xFF1E293B),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                        Text(
-                          '₦ ${total.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: const Color(0xFF1E293B),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.sp,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10.h),
-
-                    if (_paymentMethod != 'Credit') ...[
-                      // Payment status indicator
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Payment Status',
-                            style: TextStyle(
-                              color: const Color(0xFF64748B),
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-                            decoration: BoxDecoration(
-                              color: _paymentStatus == 'Paid'
-                                  ? const Color(0xFFECFDF5)
-                                  : _paymentStatus == 'Partial'
-                                      ? const Color(0xFFFFF7ED)
-                                      : const Color(0xFFFEF2F2),
-                              borderRadius: BorderRadius.circular(20.r),
-                            ),
-                            child: Text(
-                              _paymentStatus,
-                              style: TextStyle(
-                                color: _paymentStatus == 'Paid'
-                                    ? const Color(0xFF059669)
-                                    : _paymentStatus == 'Partial'
-                                        ? const Color(0xFFD97706)
-                                        : const Color(0xFFDC2626),
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8.h),
-                    ],
-
-                    // Complete Sale Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44.h,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F9F68), // Green complete button
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          elevation: 0,
-                        ),
-                        onPressed: _cartItems.isEmpty
-                            ? null
-                            : () {
-                                ref.read(salesCheckoutProvider.notifier).reset();
-                                _showPaymentConfirmationSheet(total);
-                              },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline_rounded,
-                              color: Colors.white,
-                              size: 16.sp,
-                            ),
-                            SizedBox(width: 6.w),
-                            Text(
-                              'Complete Sale',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            SaleSummaryBottomBar(
+              subtotal: subtotal,
+              discount: discount,
+              tax: tax,
+              total: total,
+              taxPercentage: _taxController.text,
+              paymentMethod: _paymentMethod,
+              paymentStatus: _paymentStatus,
+              hasItems: _cartItems.isNotEmpty,
+              onCompleteSale: () {
+                ref.read(salesCheckoutProvider.notifier).reset();
+                _showPaymentConfirmationSheet(total);
+              },
             ),
           ],
         ),
@@ -732,580 +382,116 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
     final initialPartialText = _amountPaidController.text.isNotEmpty
         ? _amountPaidController.text
         : (total / 2).toStringAsFixed(2);
-    final initialPartialVal = double.tryParse(initialPartialText) ?? (total / 2);
-
-    final TextEditingController amountController = TextEditingController(
-      text: _paymentStatus == 'Partial' ? initialPartialText : (isUnpaid ? '0.00' : total.toStringAsFixed(2)),
-    );
-    String selectedMethod = isUnpaid ? 'Credit' : (_paymentMethod == 'Credit' ? 'Cash' : _paymentMethod);
-    double amountReceived = _paymentStatus == 'Partial' ? initialPartialVal : (isUnpaid ? 0.0 : total);
-
-    // Generate quick pills based on total
-    final ceil1k = (total / 1000).ceil() * 1000.0;
-    final ceil5k = (total / 5000).ceil() * 5000.0;
-    final ceil10k = (total / 10000).ceil() * 10000.0;
-
-    final List<double> quickAmounts = [];
-    if (ceil1k > total) quickAmounts.add(ceil1k);
-    if (ceil5k > ceil1k) quickAmounts.add(ceil5k);
-    if (ceil10k > ceil5k) quickAmounts.add(ceil10k);
-
-    while (quickAmounts.length < 3) {
-      final lastVal = quickAmounts.isEmpty ? total : quickAmounts.last;
-      quickAmounts.add(((lastVal + 1000) / 1000).ceil() * 1000.0);
-    }
 
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, sheetSetState) {
-            final changeDue = amountReceived > total ? amountReceived - total : 0.0;
+      builder: (context) => CompleteSaleSheet(
+        total: total,
+        isUnpaid: isUnpaid,
+        paymentStatus: _paymentStatus,
+        initialPartialText: initialPartialText,
+        initialPaymentMethod: _paymentMethod,
+        onConfirm: (amountReceived, selectedMethod) async {
+          // ── Connectivity gate ───────────────────────
+          if (!await requireConnectivity()) return;
 
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-              ),
-              padding: EdgeInsets.only(
-                left: 20.w,
-                right: 20.w,
-                top: 10.h,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24.h,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag Handle
-                  Center(
-                    child: Container(
-                      width: 40.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFCBD5E1),
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
+          final businessProfile = ref.read(businessProfileProvider).value;
+          final String bName = businessProfile?.name ?? 'Kinetic Retail';
+          final String bAddress = businessProfile?.address ?? '';
+          final String bPhone = businessProfile?.phone ?? '';
+          const String bEmail = '';
+          final String? bLogoUrl = businessProfile?.logoUrl;
 
-                  // Header title + Close X button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Complete Sale',
-                        style: TextStyle(
-                          color: const Color(0xFF1E293B),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16.sp,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close_rounded, color: const Color(0xFF64748B), size: 20.sp),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16.h),
-
-                  // Total Due section
-                  Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          'TOTAL DUE',
-                          style: TextStyle(
-                            color: const Color(0xFF94A3B8),
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          '₦ ${total.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: const Color(0xFF0F9F68),
-                            fontSize: 28.sp,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20.h),
-
-                  // ── Failure State Warning ──────────────────────────────────
-                  if (ref.watch(salesCheckoutProvider).hasError) ...[
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(10.r),
-                        border: Border.all(color: const Color(0xFFFCA5A5), width: 1),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.error_outline_rounded,
-                              color: const Color(0xFFDC2626), size: 18.sp),
-                          SizedBox(width: 10.w),
-                          Expanded(
-                            child: Text(
-                              ref.watch(salesCheckoutProvider).error is Failure
-                                  ? (ref.watch(salesCheckoutProvider).error as Failure).message
-                                  : 'Failed to record sale: ${ref.watch(salesCheckoutProvider).error}',
-                              style: TextStyle(
-                                color: const Color(0xFFDC2626),
-                                fontSize: 11.sp,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                  ],
-
-                  // ── Unpaid Credit Warning ──────────────────────────────────
-                  if (isUnpaid) ...[ 
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(10.r),
-                        border: Border.all(color: const Color(0xFFFCA5A5), width: 1),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.warning_amber_rounded,
-                              color: const Color(0xFFDC2626), size: 18.sp),
-                          SizedBox(width: 10.w),
-                          Expanded(
-                            child: Text(
-                              'Unpaid / Debt Sale: The customer will receive goods on credit. An outstanding balance of ₦ ${total.toStringAsFixed(2)} will be logged.',
-                              style: TextStyle(
-                                color: const Color(0xFFDC2626),
-                                fontSize: 11.sp,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                  ] else ...[ 
-                    // ── Payment Method Selector ────────────────────────────
-                    Text(
-                      'Payment Method',
-                      style: TextStyle(
-                        color: const Color(0xFF1E293B),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildPaymentMethodCard(
-                            title: 'Cash',
-                            icon: Icons.payments_outlined,
-                            isSelected: selectedMethod == 'Cash',
-                            onTap: () => sheetSetState(() => selectedMethod = 'Cash'),
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: _buildPaymentMethodCard(
-                            title: 'Bank',
-                            icon: Icons.account_balance_outlined,
-                            isSelected: selectedMethod == 'Bank',
-                            onTap: () => sheetSetState(() => selectedMethod = 'Bank'),
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: _buildPaymentMethodCard(
-                            title: 'Mobile',
-                            icon: Icons.phone_android_outlined,
-                            isSelected: selectedMethod == 'Mobile',
-                            onTap: () => sheetSetState(() => selectedMethod = 'Mobile'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20.h),
-
-                    // ── Amount Received Field ─────────────────────────────
-                    Text(
-                      'Amount Received (₦)',
-                      style: TextStyle(
-                        color: const Color(0xFF1E293B),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Container(
-                      height: 48.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10.r),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                          width: 1.2,
-                        ),
-                      ),
-                      child: TextField(
-                        controller: amountController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1E293B),
-                        ),
-                        onChanged: (val) {
-                          sheetSetState(() {
-                            amountReceived = double.tryParse(val) ?? 0;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          prefixText: '₦  ',
-                          prefixStyle: TextStyle(
-                            color: const Color(0xFF1E293B),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.sp,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                              vertical: 14.h, horizontal: 12.w),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-
-                    // ── Quick Amount Pills ────────────────────────────────
-                    Row(
-                      children: quickAmounts
-                          .take(3)
-                          .map(
-                            (amount) => Padding(
-                              padding: EdgeInsets.only(right: 8.w),
-                              child: _buildQuickAmountPill(
-                                text: '₦${(amount / 1000).toStringAsFixed(0)}k',
-                                onTap: () {
-                                  amountController.text = amount.toStringAsFixed(0);
-                                  sheetSetState(() => amountReceived = amount);
-                                },
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    SizedBox(height: 14.h),
-
-                    // ── Change Due Banner ─────────────────────────────────
-                    if (changeDue > 0)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFECFDF5),
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Change Due',
-                              style: TextStyle(
-                                color: const Color(0xFF059669),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12.sp,
-                              ),
-                            ),
-                            Text(
-                              '₦ ${changeDue.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: const Color(0xFF059669),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    // ── Partial validation warning ────────────────────────
-                    if (_paymentStatus == 'Partial' && amountReceived >= total)
-                      Container(
-                        margin: EdgeInsets.only(top: 8.h),
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(
-                          'Amount paid cannot be equal to or greater than the total for a partial payment.',
-                          style: TextStyle(
-                            color: const Color(0xFFDC2626),
-                            fontSize: 11.sp,
-                          ),
-                        ),
-                      ),
-                    SizedBox(height: 20.h),
-                  ],
-
-                  // ── Confirm Button ────────────────────────────────────────
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44.h,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isUnpaid
-                            ? const Color(0xFFDC2626)
-                            : const Color(0xFF0F9F68),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: ref.watch(salesCheckoutProvider).isLoading
-                          ? null
-                          : () async {
-                              // ── Connectivity gate ───────────────────────
-                              if (!await requireConnectivity()) return;
-
-                              // Block partial if amount >= total
-                              if (_paymentStatus == 'Partial' && amountReceived >= total) {
-                                return;
-                              }
-                              // Block partial if field is empty / zero
-                              if (_paymentStatus == 'Partial' && amountReceived <= 0) {
-                                return;
-                              }
-
-                              final businessProfile = ref.read(businessProfileProvider).value;
-                               final String bName = businessProfile?.name ?? 'Kinetic Retail';
-                              final String bAddress = businessProfile?.address ?? '';
-                              final String bPhone = businessProfile?.phone ?? '';
-                              const String bEmail = '';
-                              final String? bLogoUrl = businessProfile?.logoUrl;
-
-                              final receiptItems = _cartItems.map((item) {
-                                final qty = _quantities[item.id] ?? 1.0;
-                                final price = item.sellPrice;
-                                return ReceiptItem(
-                                  name: item.name,
-                                  quantity: qty,
-                                  unitPrice: price,
-                                  total: price * qty,
-                                );
-                              }).toList();
-
-                              final calculatedSubtotal = _calculateSubtotal();
-                              final calculatedDiscount = _getDiscountValue();
-                              final calculatedTax = _getTaxValue(calculatedSubtotal);
-                              final calculatedTotal =
-                                  calculatedSubtotal - calculatedDiscount + calculatedTax;
-                              final finalAmountPaid = isUnpaid
-                                  ? 0.0
-                                  : (_paymentStatus == 'Partial'
-                                      ? amountReceived
-                                      : calculatedTotal);
-
-                              final receiptData = ReceiptData(
-                                businessName: bName,
-                                businessAddress: bAddress,
-                                businessPhone: bPhone,
-                                businessEmail: bEmail,
-                                businessLogoUrl: bLogoUrl,
-                                invoiceNo: _invoiceNo,
-                                dateTime: DateTime.now(),
-                                customerName: _selectedCustomer == 'None'
-                                    ? 'Retail Customer'
-                                    : _selectedCustomer,
-                                customerType: _selectedCustomer == 'None'
-                                    ? 'Regular Customer'
-                                    : 'Retail Customer',
-                                items: receiptItems,
-                                subtotal: calculatedSubtotal,
-                                tax: calculatedTax,
-                                total: calculatedTotal,
-                                amountPaid: finalAmountPaid,
-                                paymentMethod: isUnpaid ? 'Credit' : selectedMethod,
-                                paymentStatus: _paymentStatus,
-                              );
-
-                              final saleResult = await ref.read(salesCheckoutProvider.notifier).recordSale(
-                                customerName: _selectedCustomer == 'None' ? 'Retail Customer' : _selectedCustomer,
-                                totalAmount: calculatedTotal,
-                                amountPaid: finalAmountPaid,
-                                discount: calculatedDiscount,
-                                paymentMethod: isUnpaid
-                                    ? 'credit'
-                                    : (selectedMethod.toLowerCase() == 'cash'
-                                        ? 'cash'
-                                        : 'transfer'),
-                                status: _paymentStatus == 'Unpaid'
-                                    ? 'debt'
-                                    : _paymentStatus.toLowerCase(),
-                                invoiceNo: _invoiceNo,
-                                items: _cartItems.map((item) {
-                                  final qty = _quantities[item.id] ?? 1.0;
-                                  return {
-                                    'productId': item.id,
-                                    'productName': item.name,
-                                    'quantity': qty,
-                                    'unitPrice': item.sellPrice,
-                                    'total': item.sellPrice * qty,
-                                  };
-                                }).toList(),
-                              );
-
-                              if (saleResult != null) {
-                                // Invalidate sales metrics to force refresh
-                                ref.invalidate(salesSummaryProvider);
-                                ref.invalidate(salesHistoryProvider(null));
-
-                                if (context.mounted) {
-                                  Navigator.pop(context); // pop the sheet
-                                  context.pushReplacement(
-                                    AppRoutes.saleSuccess,
-                                    extra: {
-                                      'invoiceNo': _invoiceNo,
-                                      'amountPaid': finalAmountPaid,
-                                      'paymentMethod': isUnpaid ? 'Credit' : selectedMethod,
-                                      'paymentStatus': _paymentStatus,
-                                      'total': calculatedTotal,
-                                      'dateTime': DateTime.now(),
-                                      'receiptData': receiptData,
-                                    },
-                                  );
-                                }
-                              } else {
-                                showGlobalToast(
-                                  message: 'Failed to record sale. Please try again.',
-                                  status: 'error',
-                                );
-                              }
-                            },
-                      child: ref.watch(salesCheckoutProvider).isLoading
-                          ? SizedBox(
-                              width: 20.w,
-                              height: 20.w,
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              isUnpaid ? 'Confirm Debt / Unpaid Sale' : 'Confirm Payment',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                  ),
-                  SizedBox(height: 14.h),
-
-                  // Cancel link
-                  Center(
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: const Color(0xFFEF4444),
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          final receiptItems = _cartItems.map((item) {
+            final qty = _quantities[item.id] ?? 1.0;
+            final price = item.sellPrice;
+            return ReceiptItem(
+              name: item.name,
+              quantity: qty,
+              unitPrice: price,
+              total: price * qty,
             );
-          },
-        );
-      },
-    );
-  }
+          }).toList();
 
+          final calculatedSubtotal = _calculateSubtotal();
+          final calculatedDiscount = _getDiscountValue();
+          final calculatedTax = _getTaxValue(calculatedSubtotal);
+          final calculatedTotal = calculatedSubtotal - calculatedDiscount + calculatedTax;
+          final finalAmountPaid = isUnpaid
+              ? 0.0
+              : (_paymentStatus == 'Partial' ? amountReceived : calculatedTotal);
 
-  Widget _buildPaymentMethodCard({
-    required String title,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF1E40AF) : const Color(0xFFCBD5E1),
-            width: isSelected ? 1.5 : 1.0,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? const Color(0xFF1E40AF) : const Color(0xFF64748B),
-              size: 20.sp,
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              title,
-              style: TextStyle(
-                color: isSelected ? const Color(0xFF1E40AF) : const Color(0xFF64748B),
-                fontSize: 11.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+          final receiptData = ReceiptData(
+            businessName: bName,
+            businessAddress: bAddress,
+            businessPhone: bPhone,
+            businessEmail: bEmail,
+            businessLogoUrl: bLogoUrl,
+            invoiceNo: _invoiceNo,
+            dateTime: DateTime.now(),
+            customerName: _selectedCustomer == 'None' ? 'Retail Customer' : _selectedCustomer,
+            customerType: _selectedCustomer == 'None' ? 'Regular Customer' : 'Retail Customer',
+            items: receiptItems,
+            subtotal: calculatedSubtotal,
+            tax: calculatedTax,
+            total: calculatedTotal,
+            amountPaid: finalAmountPaid,
+            paymentMethod: isUnpaid ? 'Credit' : selectedMethod,
+            paymentStatus: _paymentStatus,
+          );
 
-  Widget _buildQuickAmountPill({
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(
-            color: const Color(0xFFCBD5E1),
-            width: 1,
-          ),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: const Color(0xFF334155),
-            fontWeight: FontWeight.w600,
-            fontSize: 11.sp,
-          ),
-        ),
+          final saleResult = await ref.read(salesCheckoutProvider.notifier).recordSale(
+            customerName: _selectedCustomer == 'None' ? 'Retail Customer' : _selectedCustomer,
+            totalAmount: calculatedTotal,
+            amountPaid: finalAmountPaid,
+            discount: calculatedDiscount,
+            paymentMethod: isUnpaid
+                ? 'credit'
+                : (selectedMethod.toLowerCase() == 'cash' ? 'cash' : 'transfer'),
+            status: _paymentStatus == 'Unpaid' ? 'debt' : _paymentStatus.toLowerCase(),
+            invoiceNo: _invoiceNo,
+            items: _cartItems.map((item) {
+              final qty = _quantities[item.id] ?? 1.0;
+              return {
+                'productId': item.id,
+                'productName': item.name,
+                'quantity': qty,
+                'unitPrice': item.sellPrice,
+                'total': item.sellPrice * qty,
+              };
+            }).toList(),
+          );
+
+          if (saleResult != null) {
+            ref.invalidate(salesSummaryProvider);
+            ref.invalidate(salesHistoryProvider(null));
+            ref.invalidate(productsListProvider);
+
+            if (context.mounted) {
+              Navigator.pop(context); // pop the sheet
+              context.pushReplacement(
+                AppRoutes.saleSuccess,
+                extra: {
+                  'invoiceNo': _invoiceNo,
+                  'amountPaid': finalAmountPaid,
+                  'paymentMethod': isUnpaid ? 'Credit' : selectedMethod,
+                  'paymentStatus': _paymentStatus,
+                  'total': calculatedTotal,
+                  'dateTime': DateTime.now(),
+                  'receiptData': receiptData,
+                },
+              );
+            }
+          } else {
+            showGlobalToast(
+              message: 'Failed to record sale. Please try again.',
+              status: 'error',
+            );
+          }
+        },
       ),
     );
   }

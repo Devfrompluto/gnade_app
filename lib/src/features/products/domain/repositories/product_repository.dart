@@ -14,6 +14,8 @@ abstract class ProductRepository {
     required double lowStockAt,
     required String unit,
     DateTime? expiryDate,
+    String? supplierId,
+    String? supplierName,
   });
 
   FutureEither<List<String>> getCategories(String businessId);
@@ -31,5 +33,7 @@ abstract class ProductRepository {
     required double lowStockAt,
     required String unit,
     DateTime? expiryDate,
+    String? supplierId,
+    String? supplierName,
   });
 }

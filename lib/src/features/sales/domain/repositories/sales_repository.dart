@@ -36,7 +36,23 @@ abstract class SalesRepository {
     required String status,
     required String invoiceNo,
     required List<Map<String, dynamic>> items, // Each contains productId, productName, quantity, unitPrice, total
+    String? cashierName,
   });
 
   FutureEither<Sale> getSaleDetails(String saleId);
+
+  FutureEither<Sale> recordPayment({
+    required String saleId,
+    required double paymentAmount,
+    required String paymentMethod,
+    String? reference,
+    DateTime? paymentDate,
+  });
+
+  FutureEither<Sale> refundSale({
+    required String saleId,
+    required List<Map<String, dynamic>> refundedItems,
+    required bool isFullRefund,
+    required String reason,
+  });
 }

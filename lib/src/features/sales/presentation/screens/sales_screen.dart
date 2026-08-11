@@ -15,7 +15,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
   late TabController _tabController;
   bool _showSalesAmount = true;
   bool _showGrossProfit = true;
-  bool _isCashierFiltered = false;
 
   @override
   void initState() {
@@ -68,6 +67,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
     final textTheme = theme.textTheme;
 
     final selectedDateFilter = ref.watch(salesDateFilterProvider);
+    final selectedCashier = ref.watch(selectedCashierFilterProvider);
     final salesSummaryAsync = ref.watch(salesSummaryProvider);
     final salesHistoryAsync = ref.watch(salesHistoryProvider(null));
 
@@ -114,23 +114,19 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
                           SizedBox(height: 16.h),
 
                           // Metrics Carousel
-                          _buildMetricsCarousel(salesSummaryAsync),
+                          _buildMetricsCarousel(salesSummaryAsync, salesHistoryAsync, selectedCashier),
                           SizedBox(height: 14.h),
 
-                          // Cashier Filter Tag
-                          if (_isCashierFiltered)
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding.w),
-                              child: _buildCashierFilterChip(),
-                            ),
-                          if (_isCashierFiltered) SizedBox(height: 14.h),
+                          // Cashier Filter Pills Row
+                          _buildCashierFilters(salesHistoryAsync, selectedCashier),
+                          SizedBox(height: 14.h),
 
                           // TabBar for All / Paid / Unpaid
                           _buildTabBar(),
                           SizedBox(height: 12.h),
 
                           // Sales Cards List
-                          _buildSalesList(salesHistoryAsync, isLoading),
+                          _buildSalesList(salesHistoryAsync, isLoading, selectedCashier),
                         ],
                       ),
                     ),
@@ -209,7 +205,28 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildMetricsCarousel(AsyncValue<SalesSummary> asyncSummary) {
+  Widget _buildMetricsCarousel(
+    AsyncValue<SalesSummary> asyncSummary,
+    AsyncValue<List<Sale>> asyncSales,
+    String selectedCashier,
+  ) {
+    int displayCount = 0;
+    double displayTotal = 0;
+    double displayProfit = 0;
+
+    if (selectedCashier == 'All') {
+      displayCount = asyncSummary.maybeWhen(data: (s) => s.count, orElse: () => 0);
+      displayTotal = asyncSummary.maybeWhen(data: (s) => s.totalAmount, orElse: () => 0);
+      displayProfit = asyncSummary.maybeWhen(data: (s) => s.grossProfit, orElse: () => 0);
+    } else if (asyncSales.value != null) {
+      final cashierSales = asyncSales.value!.where(
+        (s) => s.cashier.toLowerCase() == selectedCashier.toLowerCase(),
+      ).toList();
+      displayCount = cashierSales.length;
+      displayTotal = cashierSales.fold(0, (sum, s) => sum + s.totalAmount);
+      displayProfit = asyncSummary.maybeWhen(data: (s) => s.grossProfit, orElse: () => 0);
+    }
+
     return Skeletonizer(
       enabled: asyncSummary.isLoading,
       child: SizedBox(
@@ -221,10 +238,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
           children: [
             SalesMetricCard(
               title: 'Sales count',
-              value: asyncSummary.maybeWhen(
-                data: (s) => s.count.toString(),
-                orElse: () => '0',
-              ),
+              value: displayCount.toString(),
               bg: const Color(0xFFEFF6FF),
               border: const Color(0xFFDBEAFE),
               textColor: const Color(0xFF1E40AF),
@@ -234,10 +248,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
 
             SalesMetricCard(
               title: 'Sales amount',
-              value: asyncSummary.maybeWhen(
-                data: (s) => '₦ ${NumberFormat('#,##0').format(s.totalAmount)}',
-                orElse: () => '₦ 0',
-              ),
+              value: '₦ ${NumberFormat('#,##0').format(displayTotal)}',
               bg: const Color(0xFFECFDF5),
               border: const Color(0xFFD1FAE5),
               textColor: const Color(0xFF065F46),
@@ -253,10 +264,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
 
             SalesMetricCard(
               title: 'Gross profit',
-              value: asyncSummary.maybeWhen(
-                data: (s) => '₦ ${NumberFormat('#,##0').format(s.grossProfit)}',
-                orElse: () => '₦ 0',
-              ),
+              value: '₦ ${NumberFormat('#,##0').format(displayProfit)}',
               bg: const Color(0xFFFAF5FF),
               border: const Color(0xFFF3E8FF),
               textColor: const Color(0xFF6B21A8),
@@ -274,44 +282,67 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildCashierFilterChip() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
+  Widget _buildCashierFilters(AsyncValue<List<Sale>> asyncSales, String selectedCashier) {
+    final List<String> cashierOptions = ['All'];
+    if (asyncSales.value != null) {
+      for (final sale in asyncSales.value!) {
+        final name = sale.cashier.trim();
+        if (name.isNotEmpty && !cashierOptions.contains(name)) {
+          cashierOptions.add(name);
+        }
+      }
+    }
+    // Fallbacks if only 'All' exists so the user always sees interactive pills
+    if (cashierOptions.length == 1) {
+      cashierOptions.addAll(['Owner', 'Staff']);
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding.w),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.person_outline_rounded,
-            size: 14.sp,
-            color: const Color(0xFF64748B),
-          ),
-          SizedBox(width: 4.w),
-          Text(
-            'Cashier: Staff',
-            style: TextStyle(
-              color: const Color(0xFF475569),
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(width: 4.w),
-          GestureDetector(
+        children: List.generate(cashierOptions.length, (index) {
+          final cashier = cashierOptions[index];
+          final isSelected = selectedCashier == cashier;
+          final isAll = cashier == 'All';
+
+          return GestureDetector(
             onTap: () {
-              setState(() {
-                _isCashierFiltered = false;
-              });
+              ref.read(selectedCashierFilterProvider.notifier).state = cashier;
             },
-            child: Icon(
-              Icons.close_rounded,
-              size: 14.sp,
-              color: const Color(0xFF64748B),
+            child: Container(
+              margin: EdgeInsets.only(right: 8.w),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF1E40AF) : Colors.white,
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(
+                  color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isAll ? Icons.people_outline_rounded : Icons.person_outline_rounded,
+                    size: 14.sp,
+                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+                  ),
+                  SizedBox(width: 4.w),
+                  Text(
+                    isAll ? 'All Cashiers' : cashier,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : const Color(0xFF334155),
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          );
+        }),
       ),
     );
   }
@@ -351,7 +382,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildSalesList(AsyncValue<List<Sale>> asyncSales, bool isLoading) {
+  Widget _buildSalesList(AsyncValue<List<Sale>> asyncSales, bool isLoading, String selectedCashier) {
     return AnimatedBuilder(
       animation: _tabController,
       builder: (context, _) {
@@ -360,8 +391,11 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
         return asyncSales.when(
           data: (sales) {
             final filteredSales = sales.where((sale) {
-              if (tabIndex == 1) return sale.isPaid;
-              if (tabIndex == 2) return !sale.isPaid;
+              if (tabIndex == 1 && !sale.isPaid) return false;
+              if (tabIndex == 2 && sale.isPaid) return false;
+              if (selectedCashier != 'All' && sale.cashier.toLowerCase() != selectedCashier.toLowerCase()) {
+                return false;
+              }
               return true;
             }).toList();
 

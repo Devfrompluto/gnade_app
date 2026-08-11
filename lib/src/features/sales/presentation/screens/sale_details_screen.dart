@@ -3,6 +3,7 @@ import 'package:gnade_app/src/imports/packages_imports.dart';
 import 'package:gnade_app/src/features/sales/presentation/widgets/sale_summary_card.dart';
 import 'package:gnade_app/src/features/sales/presentation/widgets/sale_products_card.dart';
 import 'package:gnade_app/src/features/sales/presentation/widgets/sale_totals_card.dart';
+import 'package:gnade_app/src/features/sales/presentation/widgets/sale_payment_history_card.dart';
 import 'package:gnade_app/src/features/sales/presentation/widgets/sale_details_bottom_bar.dart';
 import '../providers/sales_providers.dart';
 
@@ -44,11 +45,14 @@ class SaleDetailsScreen extends ConsumerWidget {
       body: SafeArea(
         child: saleDetailsAsync.when(
           data: (sale) {
-            // Capitalize status string for legacy widget compatibility
             final rawStatus = sale.status.toLowerCase();
             final paymentStatus = rawStatus == 'paid' 
                 ? 'Paid' 
-                : (rawStatus == 'partial' ? 'Partial' : 'Unpaid');
+                : (rawStatus == 'refunded'
+                    ? 'Returned'
+                    : (rawStatus == 'partial_refund'
+                        ? 'P. Returned'
+                        : (rawStatus == 'partial' ? 'Partial' : 'Unpaid')));
 
             return Column(
               children: [
@@ -70,6 +74,8 @@ class SaleDetailsScreen extends ConsumerWidget {
                           total: sale.totalAmount,
                           amountPaid: sale.amountPaid,
                         ),
+                        SizedBox(height: 12.h),
+                        SalePaymentHistoryCard(sale: sale),
                         SizedBox(height: 24.h),
                       ],
                     ),

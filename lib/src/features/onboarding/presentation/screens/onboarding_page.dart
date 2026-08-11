@@ -164,18 +164,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
     required String title,
     required String subtitle,
   }) {
-    return Padding(
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          SizedBox(height: 12.h),
           // Illustration Container
           SizedBox(
-            height: 300.h,
+            height: 260.h,
             width: double.infinity,
             child: illustration,
           ),
-          SizedBox(height: 40.h),
+          SizedBox(height: 24.h),
 
           // Title
           Text(
@@ -203,6 +205,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               textAlign: TextAlign.center,
             ),
           ),
+          SizedBox(height: 12.h),
         ],
       ),
     );

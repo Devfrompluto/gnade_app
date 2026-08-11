@@ -83,6 +83,9 @@ dependencies:
 
   flutter_native_splash: ^2.4.7
 
+  flutter_thermal_printer: ^2.2.1
+  esc_pos_utils_plus: ^2.0.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
