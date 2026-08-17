@@ -6,6 +6,7 @@ import 'package:gnade_app/src/imports/packages_imports.dart';
 class ProductItemTile extends StatelessWidget {
   final ProductItemMock product;
   final int selectedQty;
+  final String priceType;
   final VoidCallback onAdd;
   final VoidCallback onRemove;
 
@@ -13,6 +14,7 @@ class ProductItemTile extends StatelessWidget {
     super.key,
     required this.product,
     required this.selectedQty,
+    this.priceType = 'wholesale',
     required this.onAdd,
     required this.onRemove,
   });
@@ -20,6 +22,9 @@ class ProductItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFinished = product.quantityInStock == 0;
+    final isRetailMode = priceType == 'retail';
+    final hasCustomRetail = product.hasRetailPrice;
+    final displayPrice = (isRetailMode && hasCustomRetail) ? product.retailPrice! : product.sellPrice;
 
     return Container(
       padding: EdgeInsets.all(10.w),
@@ -68,13 +73,35 @@ class ProductItemTile extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4.h),
-                Text(
-                  '₦ ${product.price.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    color: const Color(0xFF475569),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11.sp,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '₦ ${NumberFormat('#,##0').format(displayPrice)}',
+                      style: TextStyle(
+                        color: isRetailMode ? const Color(0xFF92400E) : const Color(0xFF475569),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.sp,
+                      ),
+                    ),
+                    if (isRetailMode) ...[
+                      SizedBox(width: 6.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                        child: Text(
+                          hasCustomRetail ? 'Retail' : 'Retail (Standard)',
+                          style: TextStyle(
+                            color: const Color(0xFF92400E),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 SizedBox(height: 4.h),
                 if (isFinished)

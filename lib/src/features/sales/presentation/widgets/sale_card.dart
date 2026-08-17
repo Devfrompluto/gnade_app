@@ -55,7 +55,7 @@ class SaleCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4.r),
                     ),
                     child: Text(
-                      sale.paymentMethod,
+                      _formatPaymentMethod(sale.paymentMethod),
                       style: TextStyle(
                         color: const Color(0xFF2563EB),
                         fontWeight: FontWeight.bold,
@@ -205,5 +205,22 @@ class SaleCard extends StatelessWidget {
       ),
     ),
     );
+  }
+
+  String _formatPaymentMethod(String method) {
+    final m = method.trim();
+    final lower = m.toLowerCase();
+    if (lower.startsWith('multiple')) {
+      return 'MULTIPLE';
+    } else if (lower == 'cash') {
+      return 'CASH';
+    } else if (lower == 'mobile' || lower == 'transfer') {
+      return 'TRANSFER';
+    } else if (lower == 'bank' || lower == 'pos') {
+      return 'BANK / POS';
+    } else if (lower == 'credit') {
+      return 'CREDIT';
+    }
+    return m.toUpperCase();
   }
 }

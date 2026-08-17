@@ -103,7 +103,7 @@ class SaleSummaryCard extends StatelessWidget {
                 SizedBox(height: 14.h),
                 _buildDetailRowWithPill('Sale status', paymentStatus, statusBg, statusText),
                 SizedBox(height: 14.h),
-                _buildDetailRow('Payment method', displayPaymentMethod, isValueGray: false),
+                _buildPaymentMethodRow(context, sale.paymentMethod, displayPaymentMethod),
                 SizedBox(height: 14.h),
                 _buildDetailRow('Cashier', sale.cashier, isValueBold: true),
               ],
@@ -237,6 +237,183 @@ class SaleSummaryCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPaymentMethodRow(BuildContext context, String rawMethod, String defaultDisplay) {
+    final isMultiple = rawMethod.toLowerCase().startsWith('multiple');
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return GestureDetector(
+      onTap: isMultiple ? () => _showMultipleBreakdownDialog(context, rawMethod) : null,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Payment method',
+            style: TextStyle(
+              color: const Color(0xFF64748B),
+              fontSize: 13.sp,
+            ),
+          ),
+          Row(
+            children: [
+              Text(
+                isMultiple ? 'Multiple' : defaultDisplay,
+                style: TextStyle(
+                  color: const Color(0xFF0F172A),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.sp,
+                ),
+              ),
+              if (isMultiple) ...[
+                SizedBox(width: 6.w),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Breakdown',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 3.w),
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 11.sp,
+                        color: primaryColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMultipleBreakdownDialog(BuildContext context, String methodStr) {
+    final parts = <String, String>{};
+
+    final matches = RegExp(r'([A-Za-z\s/]+):\s*(₦?\s*[\d,\.]+)').allMatches(methodStr);
+    for (final match in matches) {
+      final key = match.group(1)?.trim();
+      var value = match.group(2)?.trim();
+      if (value != null && value.endsWith(',')) {
+        value = value.substring(0, value.length - 1).trim();
+      }
+      if (key != null && value != null && key.isNotEmpty && value.isNotEmpty) {
+        parts[key] = value;
+      }
+    }
+
+    final primaryColor = Theme.of(context).primaryColor;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+              SizedBox(height: 14.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Icon(Icons.call_split_rounded, color: primaryColor, size: 20.sp),
+                      ),
+                      SizedBox(width: 10.w),
+                      Text(
+                        'Payment Breakdown',
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close_rounded, color: const Color(0xFF64748B), size: 20.sp),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+              if (parts.isNotEmpty)
+                ...parts.entries.map((e) => Container(
+                      margin: EdgeInsets.only(bottom: 10.h),
+                      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10.r),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            e.key,
+                            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF475569)),
+                          ),
+                          Text(
+                            e.value,
+                            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                          ),
+                        ],
+                      ),
+                    ))
+              else
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    'Recorded as Multiple Split Payment.\nDetails: $methodStr',
+                    style: TextStyle(fontSize: 13.sp, color: const Color(0xFF64748B)),
+                  ),
+                ),
+              SizedBox(height: 16.h),
+            ],
+          ),
+        );
+      },
     );
   }
 }

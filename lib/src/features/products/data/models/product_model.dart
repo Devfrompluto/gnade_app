@@ -15,7 +15,10 @@ class ProductModel extends Product {
     super.expiryDate,
     super.rawSupplierId,
     super.rawSupplierName,
+    super.halfUnitPrice,
+    super.retailPrice,
     required super.createdAt,
+    super.updatedAt,
   });
 
   factory ProductModel.fromMap(Map<String, dynamic> map) {
@@ -33,9 +36,14 @@ class ProductModel extends Product {
       expiryDate: map['expiry_date'] != null ? DateTime.tryParse(map['expiry_date'].toString()) : null,
       rawSupplierId: map['supplier_id']?.toString(),
       rawSupplierName: map['supplier_name']?.toString() ?? map['supplier']?.toString(),
+      halfUnitPrice: (map['half_unit_price'] as num?)?.toDouble(),
+      retailPrice: (map['retail_price'] as num?)?.toDouble(),
       createdAt: map['created_at'] != null 
           ? (DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()) 
           : DateTime.now(),
+      updatedAt: map['updated_at'] != null 
+          ? DateTime.tryParse(map['updated_at'].toString()) 
+          : null,
     );
   }
 
@@ -54,7 +62,10 @@ class ProductModel extends Product {
       'expiry_date': expiryDate?.toIso8601String(),
       'supplier_id': rawSupplierId,
       'supplier_name': rawSupplierName,
+      'half_unit_price': halfUnitPrice,
+      'retail_price': retailPrice,
       'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 }

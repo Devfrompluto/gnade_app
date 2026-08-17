@@ -56,7 +56,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
     );
     if (picked != null) {
       ref.read(salesCustomDateRangeProvider.notifier).state = picked;
-      ref.read(salesDateFilterProvider.notifier).state = 3;
+      ref.read(salesDateFilterProvider.notifier).state = 4;
     }
   }
 
@@ -149,7 +149,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
   }
 
   Widget _buildDateFilters(int selectedDateFilter) {
-    final filters = ['Today', 'Yesterday', 'Last 7 Days', 'Custom'];
+    final filters = ['Today', 'Yesterday', 'Last 7 Days', 'This Month', 'Custom'];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
@@ -157,7 +157,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
       child: Row(
         children: List.generate(filters.length, (index) {
           final isSelected = selectedDateFilter == index;
-          final isCustom = index == 3;
+          final isCustom = index == 4;
 
           return GestureDetector(
             onTap: () {

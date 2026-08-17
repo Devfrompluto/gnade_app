@@ -116,9 +116,11 @@ final GoRouter appRouter = GoRouter(
                     final extra = state.extra as Map<String, dynamic>?;
                     final selectedItems = extra?['products'] as List<ProductItemMock>?;
                     final quantities = extra?['quantities'] as Map<String, int>?;
+                    final defaultPriceType = extra?['priceType'] as String? ?? 'wholesale';
                     return NewSaleScreen(
                       selectedItems: selectedItems ?? const [],
                       initialQuantities: quantities ?? const {},
+                      defaultPriceType: defaultPriceType,
                     );
                   },
                 ),

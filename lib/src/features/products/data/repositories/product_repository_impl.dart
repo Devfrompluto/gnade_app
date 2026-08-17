@@ -40,6 +40,8 @@ class ProductRepositoryImpl implements ProductRepository {
     DateTime? expiryDate,
     String? supplierId,
     String? supplierName,
+    double? halfUnitPrice,
+    double? retailPrice,
   }) async {
     try {
       final response = await _supabaseClient.from('products').insert({
@@ -49,12 +51,14 @@ class ProductRepositoryImpl implements ProductRepository {
         'category': category.isEmpty ? null : category,
         'cost_price': costPrice,
         'sell_price': sellPrice,
-        'quantity': quantity.toInt(),
-        'low_stock_at': lowStockAt.toInt(),
+        'quantity': quantity,
+        'low_stock_at': lowStockAt.round(),
         'unit': unit,
         'expiry_date': expiryDate?.toIso8601String(),
         'supplier_id': supplierId,
         'supplier_name': supplierName,
+        'half_unit_price': halfUnitPrice,
+        'retail_price': retailPrice,
       }).select().single();
 
       return right<Failure, Product>(ProductModel.fromMap(response));
@@ -116,6 +120,8 @@ class ProductRepositoryImpl implements ProductRepository {
     DateTime? expiryDate,
     String? supplierId,
     String? supplierName,
+    double? halfUnitPrice,
+    double? retailPrice,
   }) async {
     try {
       final response = await _supabaseClient.from('products').update({
@@ -124,12 +130,15 @@ class ProductRepositoryImpl implements ProductRepository {
         'category': category.isEmpty ? null : category,
         'cost_price': costPrice,
         'sell_price': sellPrice,
-        'quantity': quantity.toInt(),
-        'low_stock_at': lowStockAt.toInt(),
+        'quantity': quantity,
+        'low_stock_at': lowStockAt.round(),
         'unit': unit,
         'expiry_date': expiryDate?.toIso8601String(),
         'supplier_id': supplierId,
         'supplier_name': supplierName,
+        'half_unit_price': halfUnitPrice,
+        'retail_price': retailPrice,
+        'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', productId).select().single();
 
       return right<Failure, Product>(ProductModel.fromMap(response));

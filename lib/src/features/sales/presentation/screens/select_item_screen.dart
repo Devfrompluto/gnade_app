@@ -13,7 +13,8 @@ class SelectItemScreen extends ConsumerStatefulWidget {
 class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
   String _searchQuery = '';
   int _selectedCategoryIndex = 0; // 0: All, 1: Cans, 2: Bottles, 3: PET
-  
+  String _selectedPriceMode = 'wholesale'; // 'wholesale' | 'retail'
+
   @override
   void initState() {
     super.initState();
@@ -22,7 +23,7 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
       ref.read(productsListProvider.notifier).loadProducts();
     });
   }
-  
+
   // Track selected quantities for each product
   final Map<String, int> _selectedQuantities = {};
 
@@ -40,12 +41,15 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
     final selectedCategory = categories[_selectedCategoryIndex];
 
     final filteredProducts = products.where((p) {
-      final matchesSearch = p.name.toLowerCase().contains(_searchQuery.toLowerCase().trim());
-      final matchesCategory = selectedCategory == 'All' || p.category.toLowerCase() == selectedCategory.toLowerCase();
+      final matchesSearch =
+          p.name.toLowerCase().contains(_searchQuery.toLowerCase().trim());
+      final matchesCategory = selectedCategory == 'All' ||
+          p.category.toLowerCase() == selectedCategory.toLowerCase();
       return matchesSearch && matchesCategory;
     }).toList();
 
-    final int totalItemsSelected = _selectedQuantities.values.fold(0, (sum, qty) => sum + qty);
+    final int totalItemsSelected =
+        _selectedQuantities.values.fold(0, (sum, qty) => sum + qty);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -86,19 +90,19 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
             children: [
               // ─── Search Bar Row ──────────────────────────────────────────────
               Padding(
-                padding: EdgeInsets.all(AppSpacing.pagePadding.w),
+                padding: EdgeInsets.fromLTRB(AppSpacing.pagePadding.w, 12.h, AppSpacing.pagePadding.w, 6.h),
                 child: Row(
                   children: [
                     Expanded(
                       child: Container(
                         height: 40.h,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
-                            color: const Color(0xFFCBD5E1),
-                            width: 1,
-                          ),
+                          // borderRadius: BorderRadius.circular(8.r),
+                          // border: Border.all(
+                          //   color: const Color(0xFFCBD5E1),
+                          //   width: 1,
+                          // ),
                         ),
                         child: TextField(
                           onChanged: (val) {
@@ -114,7 +118,8 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
                             hintText: 'Search products...',
                             filled: false,
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12.w, vertical: 8.h),
                             prefixIcon: Icon(
                               Icons.search_rounded,
                               color: const Color(0xFF94A3B8),
@@ -128,11 +133,60 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
                 ),
               ),
 
+              // ─── Pricing Mode Selector Bar ──────────────────────────────────
+              Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding.w),
+                child: Container(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.sell_outlined,
+                                color: const Color(0xFF64748B), size: 16.sp),
+                            SizedBox(width: 6.w),
+                            Flexible(
+                              child: Text(
+                                'Pricing Mode',
+                                style: TextStyle(
+                                  color: const Color(0xFF1E293B),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.sp,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          _buildModePill('wholesale', 'Wholesale'),
+                          SizedBox(width: 4.w),
+                          _buildModePill('retail', 'Retail'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 10.h),
+
               // ─── Category Filter Pills ───────────────────────────────────────
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding.w),
+                padding:
+                    EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding.w),
                 child: Row(
                   children: List.generate(categories.length, (index) {
                     final isSelected = _selectedCategoryIndex == index;
@@ -144,20 +198,28 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
                       },
                       child: Container(
                         margin: EdgeInsets.only(right: 8.w),
-                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 14.w, vertical: 8.h),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF1E40AF) : Colors.white,
+                          color: isSelected
+                              ? const Color(0xFF1E40AF)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(20.r),
                           border: Border.all(
-                            color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
+                            color: isSelected
+                                ? Colors.transparent
+                                : const Color(0xFFE2E8F0),
                             width: 1,
                           ),
                         ),
                         child: Text(
                           categories[index],
                           style: TextStyle(
-                            color: isSelected ? Colors.white : const Color(0xFF334155),
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF334155),
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.w500,
                             fontSize: 12.sp,
                           ),
                         ),
@@ -174,29 +236,36 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
                     ? const Center(
                         child: AppEmptyState(
                           title: 'No items found',
-                          subtitle: 'Create products in the inventory tab to record sales.',
+                          subtitle:
+                              'Create products in the inventory tab to record sales.',
                         ),
                       )
                     : ListView.separated(
                         physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding.w),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.pagePadding.w),
                         itemCount: filteredProducts.length,
-                        separatorBuilder: (context, index) => SizedBox(height: 10.h),
+                        separatorBuilder: (context, index) =>
+                            SizedBox(height: 10.h),
                         itemBuilder: (context, index) {
                           final product = filteredProducts[index];
-                          final currentQty = _selectedQuantities[product.id] ?? 0;
+                          final currentQty =
+                              _selectedQuantities[product.id] ?? 0;
 
                           return ProductItemTile(
                             product: product,
                             selectedQty: currentQty,
+                            priceType: _selectedPriceMode,
                             onAdd: () {
                               if (currentQty < product.quantity) {
                                 setState(() {
-                                  _selectedQuantities[product.id] = currentQty + 1;
+                                  _selectedQuantities[product.id] =
+                                      currentQty + 1;
                                 });
                               } else {
                                 showGlobalToast(
-                                  message: 'Cannot exceed available stock (${product.quantity.toInt()})',
+                                  message:
+                                      'Cannot exceed available stock (${product.quantity.toInt()})',
                                   status: 'warning',
                                 );
                               }
@@ -204,7 +273,8 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
                             onRemove: () {
                               if (currentQty > 0) {
                                 setState(() {
-                                  _selectedQuantities[product.id] = currentQty - 1;
+                                  _selectedQuantities[product.id] =
+                                      currentQty - 1;
                                 });
                               }
                             },
@@ -247,7 +317,8 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
                               final List<Product> selectedProducts = [];
                               _selectedQuantities.forEach((id, qty) {
                                 if (qty > 0) {
-                                  final product = products.firstWhere((p) => p.id == id);
+                                  final product =
+                                      products.firstWhere((p) => p.id == id);
                                   selectedProducts.add(product);
                                 }
                               });
@@ -256,6 +327,7 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
                                 extra: {
                                   'products': selectedProducts,
                                   'quantities': _selectedQuantities,
+                                  'priceType': _selectedPriceMode,
                                 },
                               );
                             }
@@ -273,6 +345,49 @@ class _SelectItemScreenState extends ConsumerState<SelectItemScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModePill(String type, String label) {
+    final isSelected = _selectedPriceMode == type;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedPriceMode = type;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (type == 'retail'
+                  ? const Color(0xFFFEF3C7)
+                  : const Color(0xFFEFF6FF))
+              : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: isSelected
+                ? (type == 'retail'
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF3B82F6))
+                : const Color(0xFFE2E8F0),
+            width: 1.2,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected
+                ? (type == 'retail'
+                    ? const Color(0xFF92400E)
+                    : const Color(0xFF1E40AF))
+                : const Color(0xFF94A3B8),
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 11.5.sp,
           ),
         ),
       ),

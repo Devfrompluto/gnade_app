@@ -1,9 +1,9 @@
-import 'dart:ui';
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/customer_profile_header.dart';
 import '../widgets/customer_tabs_view.dart';
+import 'add_customer_screen.dart';
 
 class CustomerDetailsScreen extends ConsumerWidget {
   final String id;
@@ -13,93 +13,163 @@ class CustomerDetailsScreen extends ConsumerWidget {
     required this.id,
   });
 
+  void _showCustomerOptionsMenu(BuildContext context, WidgetRef ref, Customer customer) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  customer.name,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                ListTile(
+                  leading: Icon(Icons.edit_outlined, color: const Color(0xFF1E40AF), size: 22.sp),
+                  title: Text(
+                    'Edit Customer',
+                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => AddCustomerScreen(initialCustomer: customer),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                ListTile(
+                  leading: Icon(Icons.delete_outline_rounded, color: const Color(0xFFDC2626), size: 22.sp),
+                  title: Text(
+                    'Delete Customer',
+                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: const Color(0xFFDC2626)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _confirmDeleteCustomer(context, ref, customer);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteCustomer(BuildContext context, WidgetRef ref, Customer customer) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          title: Text(
+            'Delete Customer?',
+            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+          ),
+          content: Text(
+            'Are you sure you want to delete ${customer.name}? This action cannot be undone.',
+            style: TextStyle(fontSize: 13.sp, color: const Color(0xFF64748B)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancel',
+                style: TextStyle(fontSize: 13.sp, color: const Color(0xFF64748B), fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                elevation: 0,
+              ),
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                final success = await ref.read(customerListProvider.notifier).deleteCustomer(customer.id);
+                if (success) {
+                  showGlobalToast(message: 'Customer deleted successfully!');
+                  if (context.mounted) {
+                    context.pop();
+                  }
+                } else {
+                  showGlobalToast(message: 'Failed to delete customer.', status: 'error');
+                }
+              },
+              child: Text(
+                'Delete',
+                style: TextStyle(fontSize: 13.sp, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customers = ref.watch(customerListProvider);
-    final customer = customers.firstWhere(
-      (c) => c.id == id,
-      orElse: () => customers.first,
-    );
+    final matches = customers.where((c) => c.id == id);
+    if (matches.isEmpty) {
+      return Scaffold(
+        appBar: const AppCustomAppBar(title: 'Customer Details'),
+        body: const Center(child: Text('Customer not found')),
+      );
+    }
+    final customer = matches.first;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // light slate gray background
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppCustomAppBar(
         title: customer.name,
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.more_vert_rounded, color: const Color(0xFF0F172A), size: 20.sp),
-            onPressed: () => showGlobalToast(message: 'Customer options coming soon'),
+            onPressed: () => _showCustomerOptionsMenu(context, ref, customer),
           ),
           SizedBox(width: 8.w),
         ],
-      ),
-      bottomNavigationBar: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.85),
-              border: const Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-            ),
-            child: SafeArea(
-              child: Container(
-                width: double.infinity,
-                height: 56.h,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF059669).withValues(alpha: 0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: () => showGlobalToast(message: 'Record Payment coming soon'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF059669), // emerald-600
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.payment_rounded, color: Colors.white, size: 20.sp),
-                      SizedBox(width: 8.w),
-                      Text(
-                        'Record Payment',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 15.sp,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
         child: Column(
           children: [
-            // 1. Premium Profile Avatar Header Card Component
+            // 1. Profile Avatar Header Card
             CustomerProfileHeader(customer: customer),
             SizedBox(height: 24.h),
 
-            // 2. Modern Tabs Selector (History / Debt / Notes) Component
+            // 2. Modern Tabs Selector (History / Debt / Notes)
             CustomerTabsView(customer: customer),
-            SizedBox(height: 40.h), // Extra padding for bottom bar
+            SizedBox(height: 24.h),
           ],
         ),
       ),

@@ -47,10 +47,15 @@ class SaleProductsCard extends StatelessWidget {
               separatorBuilder: (context, index) => SizedBox(height: 16.h),
               itemBuilder: (context, index) {
                 final item = items[index];
+                // Format quantity: show 1.5, not 1.50 or 2.0
+                final qtyStr = item.quantity == item.quantity.toInt()
+                    ? item.quantity.toInt().toString()
+                    : item.quantity.toString();
                 return _buildProductItem(
                   item.productName,
-                  '${item.quantity.toDouble()} @ ${NumberFormat('#,##0').format(item.unitPrice)}',
+                  '$qtyStr @ ${NumberFormat('#,##0').format(item.unitPrice)}',
                   NumberFormat('#,##0').format(item.total),
+                  priceType: item.priceType,
                 );
               },
             ),
@@ -90,31 +95,57 @@ class SaleProductsCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProductItem(String title, String subtitle, String total) {
+  Widget _buildProductItem(String title, String subtitle, String total, {String priceType = 'wholesale'}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: const Color(0xFF0F172A),
-                fontWeight: FontWeight.bold,
-                fontSize: 13.sp,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: const Color(0xFF0F172A),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                  ),
+                  if (priceType == 'retail') ...[
+                    SizedBox(width: 6.w),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(
+                        'Retail',
+                        style: TextStyle(
+                          color: const Color(0xFF92400E),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 9.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: const Color(0xFF64748B),
-                fontSize: 11.sp,
+              SizedBox(height: 4.h),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: const Color(0xFF64748B),
+                  fontSize: 11.sp,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         Text(
           total,

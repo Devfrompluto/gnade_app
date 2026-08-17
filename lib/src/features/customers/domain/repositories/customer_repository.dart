@@ -10,4 +10,13 @@ abstract class CustomerRepository {
     String? address,
     String? notes,
   });
+  FutureEither<Customer> updateCustomer({
+    required String id,
+    required String name,
+    required String phone,
+    String? email,
+    String? address,
+    String? notes,
+  });
+  FutureEither<void> deleteCustomer(String id);
 }

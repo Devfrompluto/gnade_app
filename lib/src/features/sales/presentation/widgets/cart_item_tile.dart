@@ -1,10 +1,12 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/shared/helpers/price_calculator.dart';
 
 class CartItemTile extends StatefulWidget {
   final ProductItemMock item;
   final double quantity;
   final double unitPrice; // Custom unit price or sell_price
+  final String priceType;
   final ValueChanged<double> onQuantityChanged;
   final VoidCallback onRemove;
 
@@ -13,6 +15,7 @@ class CartItemTile extends StatefulWidget {
     required this.item,
     required this.quantity,
     required this.unitPrice,
+    this.priceType = 'wholesale',
     required this.onQuantityChanged,
     required this.onRemove,
   });
@@ -72,11 +75,19 @@ class _CartItemTileState extends State<CartItemTile> {
         });
         widget.onQuantityChanged(1);
       } else {
+        // Snap to nearest valid value (.5 increments)
+        final snapped = _snapToValidQty(val);
         setState(() {
-          _controller.text = _formatQty(val);
+          _controller.text = _formatQty(snapped);
         });
+        widget.onQuantityChanged(snapped);
       }
     }
+  }
+
+  /// Snap a raw value to the nearest valid quantity (.5 increment)
+  double _snapToValidQty(double val) {
+    return (val * 2).round() / 2;
   }
 
   void _onInputChanged(String val) {
@@ -94,9 +105,31 @@ class _CartItemTileState extends State<CartItemTile> {
     }
   }
 
+  /// Step size for increment/decrement buttons
+  double get _step => widget.item.hasHalfUnit ? 0.5 : 1.0;
+
+  /// Minimum quantity
+  double get _minQty => widget.item.hasHalfUnit ? 0.5 : 1.0;
+
+  /// Calculate the subtotal using PriceCalculator
+  double get _subtotal {
+    try {
+      return PriceCalculator.calculateLineTotal(
+        quantity: widget.quantity,
+        wholesalePrice: widget.item.sellPrice,
+        halfUnitPrice: widget.item.halfUnitPrice,
+        retailPrice: widget.item.retailPrice,
+        priceType: widget.priceType,
+      );
+    } catch (_) {
+      // Fallback to simple multiplication if PriceCalculator throws
+      return widget.unitPrice * widget.quantity;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final subtotal = widget.unitPrice * widget.quantity;
+    final subtotal = _subtotal;
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -180,8 +213,8 @@ class _CartItemTileState extends State<CartItemTile> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        if (widget.quantity > 1) {
-                          widget.onQuantityChanged(widget.quantity - 1);
+                        if (widget.quantity > _minQty) {
+                          widget.onQuantityChanged(widget.quantity - _step);
                         }
                       },
                       child: Container(
@@ -228,7 +261,7 @@ class _CartItemTileState extends State<CartItemTile> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        widget.onQuantityChanged(widget.quantity + 1);
+                        widget.onQuantityChanged(widget.quantity + _step);
                       },
                       child: Container(
                         width: 32.w,

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../presentation/widgets/inventory_item_tile.dart'; // Import StockStatus
 
 class Product extends Equatable {
@@ -16,7 +17,10 @@ class Product extends Equatable {
   final DateTime? expiryDate;
   final String? rawSupplierId;
   final String? rawSupplierName;
+  final double? halfUnitPrice;
+  final double? retailPrice;
   final DateTime createdAt;
+  final DateTime? updatedAt;
 
   const Product({
     required this.id,
@@ -32,11 +36,23 @@ class Product extends Equatable {
     this.expiryDate,
     this.rawSupplierId,
     this.rawSupplierName,
+    this.halfUnitPrice,
+    this.retailPrice,
     required this.createdAt,
+    this.updatedAt,
   });
 
   bool get isLowStock => quantity <= lowStockAt;
   bool get isOutOfStock => quantity <= 0;
+
+  /// Whether this product has a half-unit price set
+  bool get hasHalfUnit => halfUnitPrice != null && halfUnitPrice! > 0;
+
+  /// Whether this product has a retail price set
+  bool get hasRetailPrice => retailPrice != null && retailPrice! > 0;
+
+  /// Returns available price types for this product
+  List<String> get availablePriceTypes => const ['wholesale', 'retail'];
 
   // Compatibility fields for unmigrated product screens and POS
   int get qty => quantity.toInt();
@@ -52,7 +68,8 @@ class Product extends Equatable {
 
   String get supplier => (rawSupplierName != null && rawSupplierName!.isNotEmpty) ? rawSupplierName! : 'None';
   String get supplierId => rawSupplierId ?? '';
-  String get lastUpdated => 'Recently';
+  DateTime get displayUpdatedAt => updatedAt ?? createdAt;
+  String get lastUpdated => DateFormat('dd MMM yyyy').format(displayUpdatedAt);
 
   String get initials {
     if (name.isEmpty) return '';
@@ -87,7 +104,10 @@ class Product extends Equatable {
         expiryDate,
         rawSupplierId,
         rawSupplierName,
+        halfUnitPrice,
+        retailPrice,
         createdAt,
+        updatedAt,
       ];
 }
 

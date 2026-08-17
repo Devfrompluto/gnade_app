@@ -67,25 +67,23 @@ class SalePaymentDetailsCard extends StatelessWidget {
             onMethodChanged: onMethodChanged,
             isCustomerSelected: isCustomerSelected,
           ),
-          if (paymentMethod != 'Credit') ...[
-            SizedBox(height: 16.h),
-            // Payment Status Title
-            Text(
-              'Payment Status',
-              style: TextStyle(
-                color: const Color(0xFF64748B),
-                fontWeight: FontWeight.bold,
-                fontSize: 11.sp,
-              ),
+          SizedBox(height: 16.h),
+          // Payment Status Title
+          Text(
+            'Payment Status',
+            style: TextStyle(
+              color: const Color(0xFF64748B),
+              fontWeight: FontWeight.bold,
+              fontSize: 11.sp,
             ),
-            SizedBox(height: 8.h),
-            PaymentStatusSelector(
-              selectedStatus: paymentStatus,
-              onStatusChanged: onStatusChanged,
-              isCustomerSelected: isCustomerSelected,
-            ),
-            SizedBox(height: 16.h),
-          ],
+          ),
+          SizedBox(height: 8.h),
+          PaymentStatusSelector(
+            selectedStatus: paymentStatus,
+            onStatusChanged: onStatusChanged,
+            isCustomerSelected: isCustomerSelected,
+          ),
+          SizedBox(height: 16.h),
 
           // ─── Conditional Partial payment inputs ─────────────
           if (paymentStatus == 'Partial') ...[

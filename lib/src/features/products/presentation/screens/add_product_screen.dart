@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import '../providers/products_providers.dart';
 import '../widgets/products_add_general_card.dart';
 import '../widgets/products_add_pricing_card.dart';
@@ -24,6 +25,8 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final _quantityController = TextEditingController();
   final _lowStockController = TextEditingController();
   final _expiryDateController = TextEditingController();
+  final _halfUnitPriceController = TextEditingController();
+  final _retailPriceController = TextEditingController();
 
   String? _selectedCategory;
   String _selectedUnit = 'pcs';
@@ -50,6 +53,8 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     _quantityController.dispose();
     _lowStockController.dispose();
     _expiryDateController.dispose();
+    _halfUnitPriceController.dispose();
+    _retailPriceController.dispose();
     super.dispose();
   }
 
@@ -419,6 +424,12 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       expiryDate: _expiryDate,
       supplierId: _selectedSupplier?.id,
       supplierName: _selectedSupplier?.name,
+      halfUnitPrice: _halfUnitPriceController.text.isNotEmpty
+          ? double.tryParse(_halfUnitPriceController.text)
+          : null,
+      retailPrice: _retailPriceController.text.isNotEmpty
+          ? double.tryParse(_retailPriceController.text)
+          : null,
     );
     setState(() => _isLoading = false);
     if (res != null) {
@@ -457,6 +468,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                   costPriceController: _costPriceController,
                   sellPriceController: _sellPriceController,
                   profitMargin: _profitMargin,
+                  halfUnitPriceController: _halfUnitPriceController,
+                  retailPriceController: _retailPriceController,
+                  showMultiPrice: ref.watch(sessionProvider).user?.role == 'owner',
                 ),
                 SizedBox(height: 16.h),
                 ProductsAddStockCard(

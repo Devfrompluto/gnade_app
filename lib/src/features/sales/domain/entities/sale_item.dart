@@ -8,6 +8,7 @@ class SaleItem extends Equatable {
   final double quantity;
   final double unitPrice;
   final double total;
+  final String priceType; // 'wholesale' | 'retail'
 
   const SaleItem({
     required this.id,
@@ -17,6 +18,7 @@ class SaleItem extends Equatable {
     required this.quantity,
     required this.unitPrice,
     required this.total,
+    this.priceType = 'wholesale',
   });
 
   @override
@@ -28,5 +30,6 @@ class SaleItem extends Equatable {
         quantity,
         unitPrice,
         total,
+        priceType,
       ];
 }

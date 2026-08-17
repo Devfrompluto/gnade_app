@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import '../providers/products_providers.dart';
 import '../widgets/products_add_general_card.dart';
 import '../widgets/products_add_pricing_card.dart';
@@ -26,6 +27,8 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   late final TextEditingController _quantityController;
   late final TextEditingController _lowStockController;
   late final TextEditingController _expiryDateController;
+  late final TextEditingController _halfUnitPriceController;
+  late final TextEditingController _retailPriceController;
 
   String? _selectedCategory;
   late String _selectedUnit;
@@ -78,6 +81,18 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
     _calculateMargin();
 
+    // Multi-price controllers
+    _halfUnitPriceController = TextEditingController(
+      text: widget.product.halfUnitPrice != null
+          ? widget.product.halfUnitPrice!.toStringAsFixed(0)
+          : '',
+    );
+    _retailPriceController = TextEditingController(
+      text: widget.product.retailPrice != null
+          ? widget.product.retailPrice!.toStringAsFixed(0)
+          : '',
+    );
+
     _costPriceController.addListener(_calculateMargin);
     _sellPriceController.addListener(_calculateMargin);
   }
@@ -92,6 +107,8 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
     _lowStockController.dispose();
     _expiryDateController.dispose();
     _reasonNoteController.dispose();
+    _halfUnitPriceController.dispose();
+    _retailPriceController.dispose();
     super.dispose();
   }
 
@@ -462,6 +479,12 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       expiryDate: _expiryDate,
       supplierId: _selectedSupplier?.id,
       supplierName: _selectedSupplier?.name,
+      halfUnitPrice: _halfUnitPriceController.text.isNotEmpty
+          ? double.tryParse(_halfUnitPriceController.text)
+          : null,
+      retailPrice: _retailPriceController.text.isNotEmpty
+          ? double.tryParse(_retailPriceController.text)
+          : null,
     );
     setState(() => _isLoading = false);
     if (res != null) {
@@ -500,6 +523,9 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                   costPriceController: _costPriceController,
                   sellPriceController: _sellPriceController,
                   profitMargin: _profitMargin,
+                  halfUnitPriceController: _halfUnitPriceController,
+                  retailPriceController: _retailPriceController,
+                  showMultiPrice: ref.watch(sessionProvider).user?.role == 'owner',
                 ),
                 SizedBox(height: 16.h),
                 ProductsAddStockCard(

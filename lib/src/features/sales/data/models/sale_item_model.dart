@@ -9,6 +9,7 @@ class SaleItemModel extends SaleItem {
     required super.quantity,
     required super.unitPrice,
     required super.total,
+    super.priceType,
   });
 
   factory SaleItemModel.fromMap(Map<String, dynamic> map) {
@@ -20,6 +21,7 @@ class SaleItemModel extends SaleItem {
       quantity: double.tryParse(map['quantity']?.toString() ?? '') ?? 0.0,
       unitPrice: double.tryParse(map['unit_price']?.toString() ?? '') ?? 0.0,
       total: double.tryParse(map['total']?.toString() ?? '') ?? 0.0,
+      priceType: (map['price_type'] as String?) ?? 'wholesale',
     );
   }
 
@@ -32,6 +34,7 @@ class SaleItemModel extends SaleItem {
       'quantity': quantity,
       'unit_price': unitPrice,
       'total': total,
+      'price_type': priceType,
     };
   }
 }

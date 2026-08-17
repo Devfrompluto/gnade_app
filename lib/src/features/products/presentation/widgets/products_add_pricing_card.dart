@@ -5,12 +5,18 @@ class ProductsAddPricingCard extends StatelessWidget {
   final TextEditingController costPriceController;
   final TextEditingController sellPriceController;
   final double profitMargin;
+  final TextEditingController? halfUnitPriceController;
+  final TextEditingController? retailPriceController;
+  final bool showMultiPrice;
 
   const ProductsAddPricingCard({
     super.key,
     required this.costPriceController,
     required this.sellPriceController,
     required this.profitMargin,
+    this.halfUnitPriceController,
+    this.retailPriceController,
+    this.showMultiPrice = false,
   });
 
   @override
@@ -123,6 +129,65 @@ class ProductsAddPricingCard extends StatelessWidget {
               ],
             ),
           ),
+          // ─── Multi-Price Fields (Owner Only) ────────────────────
+          if (showMultiPrice) ...[
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('Half Unit Price'),
+                      _buildTextField(
+                        controller: halfUnitPriceController!,
+                        hint: 'Optional',
+                        prefixText: '₦ ',
+                        keyboardType: TextInputType.number,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) return null;
+                          final parsed = double.tryParse(val);
+                          if (parsed == null) return 'Invalid';
+                          final sellPrice = double.tryParse(sellPriceController.text) ?? 0;
+                          if (parsed >= sellPrice && sellPrice > 0) return 'Must be < sell price';
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('Retail Price'),
+                      _buildTextField(
+                        controller: retailPriceController!,
+                        hint: 'Optional',
+                        prefixText: '₦ ',
+                        keyboardType: TextInputType.number,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) return null;
+                          final parsed = double.tryParse(val);
+                          if (parsed == null) return 'Invalid';
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Half unit = price for 0.5 of one unit. Retail = alternative per-unit price.',
+              style: TextStyle(
+                color: const Color(0xFF94A3B8),
+                fontSize: 10.sp,
+              ),
+            ),
+          ],
         ],
       ),
     );

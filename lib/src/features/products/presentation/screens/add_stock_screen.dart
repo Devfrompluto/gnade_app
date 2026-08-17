@@ -15,6 +15,8 @@ class _AddStockScreenState extends ConsumerState<AddStockScreen> {
   final _qtyController = TextEditingController(text: '1');
   late final TextEditingController _costController;
   late final TextEditingController _sellingPriceController;
+  late final TextEditingController _halfUnitPriceController;
+  late final TextEditingController _retailPriceController;
 
   bool _updateSellingPrice = false;
   DateTime? _expiryDate;
@@ -29,8 +31,21 @@ class _AddStockScreenState extends ConsumerState<AddStockScreen> {
     _sellingPriceController = TextEditingController(
       text: widget.product.sellPrice > 0 ? widget.product.sellPrice.toStringAsFixed(0) : '0',
     );
+    _halfUnitPriceController = TextEditingController(
+      text: widget.product.halfUnitPrice != null && widget.product.halfUnitPrice! > 0
+          ? widget.product.halfUnitPrice!.toStringAsFixed(0)
+          : '',
+    );
+    _retailPriceController = TextEditingController(
+      text: widget.product.retailPrice != null && widget.product.retailPrice! > 0
+          ? widget.product.retailPrice!.toStringAsFixed(0)
+          : '',
+    );
     _qtyController.addListener(() => setState(() {}));
     _costController.addListener(() => setState(() {}));
+    _sellingPriceController.addListener(() => setState(() {}));
+    _halfUnitPriceController.addListener(() => setState(() {}));
+    _retailPriceController.addListener(() => setState(() {}));
   }
 
   @override
@@ -38,6 +53,8 @@ class _AddStockScreenState extends ConsumerState<AddStockScreen> {
     _qtyController.dispose();
     _costController.dispose();
     _sellingPriceController.dispose();
+    _halfUnitPriceController.dispose();
+    _retailPriceController.dispose();
     super.dispose();
   }
 
@@ -70,6 +87,16 @@ class _AddStockScreenState extends ConsumerState<AddStockScreen> {
     final newSelling = _updateSellingPrice
         ? (double.tryParse(_sellingPriceController.text) ?? widget.product.sellPrice)
         : widget.product.sellPrice;
+    final newHalfUnit = _updateSellingPrice
+        ? (_halfUnitPriceController.text.trim().isNotEmpty
+            ? double.tryParse(_halfUnitPriceController.text.trim())
+            : null)
+        : widget.product.halfUnitPrice;
+    final newRetail = _updateSellingPrice
+        ? (_retailPriceController.text.trim().isNotEmpty
+            ? double.tryParse(_retailPriceController.text.trim())
+            : null)
+        : widget.product.retailPrice;
     final newTotalQty = widget.product.quantity + addedQty;
 
     await ref.read(productsListProvider.notifier).updateProduct(
@@ -85,6 +112,8 @@ class _AddStockScreenState extends ConsumerState<AddStockScreen> {
       expiryDate: _expiryDate ?? widget.product.expiryDate,
       supplierId: widget.product.supplierId,
       supplierName: widget.product.supplier,
+      halfUnitPrice: newHalfUnit,
+      retailPrice: newRetail,
     );
 
     setState(() => _isLoading = false);
@@ -118,8 +147,11 @@ class _AddStockScreenState extends ConsumerState<AddStockScreen> {
             _AddStockSubtotalCard(subtotal: _subtotal),
             SizedBox(height: 12.h),
             _AddStockSellingPriceToggle(
+              product: widget.product,
               updateSellingPrice: _updateSellingPrice,
               sellingPriceController: _sellingPriceController,
+              halfUnitPriceController: _halfUnitPriceController,
+              retailPriceController: _retailPriceController,
               onToggle: (val) => setState(() => _updateSellingPrice = val),
             ),
             SizedBox(height: 12.h),
@@ -340,13 +372,19 @@ class _AddStockSubtotalCard extends StatelessWidget {
 }
 
 class _AddStockSellingPriceToggle extends StatelessWidget {
+  final Product product;
   final bool updateSellingPrice;
   final TextEditingController sellingPriceController;
+  final TextEditingController halfUnitPriceController;
+  final TextEditingController retailPriceController;
   final ValueChanged<bool> onToggle;
 
   const _AddStockSellingPriceToggle({
+    required this.product,
     required this.updateSellingPrice,
     required this.sellingPriceController,
+    required this.halfUnitPriceController,
+    required this.retailPriceController,
     required this.onToggle,
   });
 
@@ -360,6 +398,7 @@ class _AddStockSellingPriceToggle extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -392,7 +431,133 @@ class _AddStockSellingPriceToggle extends StatelessWidget {
                 child: Text('₦ ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
               ),
             ),
+            _buildPriceDifferenceHint(
+              currentPrice: product.sellPrice,
+              newPriceText: sellingPriceController.text,
+            ),
+            SizedBox(height: 10.h),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppTextField(
+                        controller: halfUnitPriceController,
+                        label: 'New Half Unit Price (₦)',
+                        keyboardType: TextInputType.number,
+                        prefixIcon: Padding(
+                          padding: EdgeInsets.only(left: 12.w, top: 12.h),
+                          child: Text('₦ ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                        ),
+                      ),
+                      _buildPriceDifferenceHint(
+                        currentPrice: product.halfUnitPrice,
+                        newPriceText: halfUnitPriceController.text,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppTextField(
+                        controller: retailPriceController,
+                        label: 'New Retail Price (₦)',
+                        keyboardType: TextInputType.number,
+                        prefixIcon: Padding(
+                          padding: EdgeInsets.only(left: 12.w, top: 12.h),
+                          child: Text('₦ ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                        ),
+                      ),
+                      _buildPriceDifferenceHint(
+                        currentPrice: product.retailPrice,
+                        newPriceText: retailPriceController.text,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceDifferenceHint({
+    required double? currentPrice,
+    required String newPriceText,
+  }) {
+    final newPrice = double.tryParse(newPriceText.trim());
+
+    if (currentPrice == null || currentPrice <= 0) {
+      if (newPrice != null && newPrice > 0) {
+        return Padding(
+          padding: EdgeInsets.only(top: 4.h, left: 4.w),
+          child: Text(
+            'New price: ₦${NumberFormat('#,##0').format(newPrice)}',
+            style: TextStyle(fontSize: 11.sp, color: const Color(0xFF166534), fontWeight: FontWeight.w600),
+          ),
+        );
+      }
+      return Padding(
+        padding: EdgeInsets.only(top: 4.h, left: 4.w),
+        child: Text(
+          'Currently not set',
+          style: TextStyle(fontSize: 11.sp, color: const Color(0xFF94A3B8)),
+        ),
+      );
+    }
+
+    if (newPrice == null || newPrice == currentPrice) {
+      return Padding(
+        padding: EdgeInsets.only(top: 4.h, left: 4.w),
+        child: Text(
+          'Current: ₦${NumberFormat('#,##0').format(currentPrice)} (no change)',
+          style: TextStyle(fontSize: 11.sp, color: const Color(0xFF64748B)),
+        ),
+      );
+    }
+
+    final diff = newPrice - currentPrice;
+    final isIncrease = diff > 0;
+    final diffStr = NumberFormat('#,##0').format(diff.abs());
+    final color = isIncrease ? const Color(0xFF166534) : const Color(0xFF991B1B);
+    final bg = isIncrease ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
+    final icon = isIncrease ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
+    return Padding(
+      padding: EdgeInsets.only(top: 4.h, left: 4.w),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4.w,
+        children: [
+          Text(
+            'Current: ₦${NumberFormat('#,##0').format(currentPrice)}',
+            style: TextStyle(fontSize: 11.sp, color: const Color(0xFF64748B)),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(6.r),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 10.sp, color: color),
+                SizedBox(width: 2.w),
+                Text(
+                  '${isIncrease ? '+' : '-'}₦$diffStr',
+                  style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.bold, color: color),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

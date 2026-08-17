@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/shared/helpers/price_calculator.dart';
 import '../providers/sales_providers.dart';
 import '../../../auth/presentation/providers/session_provider.dart';
 import '../widgets/cart_item_tile.dart';
@@ -9,16 +10,19 @@ import '../widgets/adjustments_card.dart';
 import '../widgets/sale_payment_details_card.dart';
 import '../widgets/sale_summary_bottom_bar.dart';
 import '../widgets/complete_sale_sheet.dart';
+import '../widgets/multiple_payment_sheet.dart';
 import '../../../products/presentation/providers/products_providers.dart';
 
 class NewSaleScreen extends ConsumerStatefulWidget {
   final List<Product> selectedItems;
   final Map<String, int> initialQuantities;
+  final String defaultPriceType;
 
   const NewSaleScreen({
     super.key,
     required this.selectedItems,
     required this.initialQuantities,
+    this.defaultPriceType = 'wholesale',
   });
 
   @override
@@ -30,6 +34,8 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
   late List<ProductItemMock> _cartItems;
   // Local cart item quantities
   late Map<String, double> _quantities;
+  // Local cart item price types
+  late Map<String, String> _priceTypes;
   
   // Random invoice ID generated on start
   late String _invoiceNo;
@@ -40,6 +46,11 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
   // Payment option states
   String _paymentMethod = 'Cash'; // Cash, Mobile, Bank, Credit
   String _paymentStatus = 'Paid'; // Paid, Unpaid, Partial
+
+  // Split payment amounts (persisted across sheet re-opens)
+  double _splitCash = 0.0;
+  double _splitMobile = 0.0;
+  double _splitBank = 0.0;
   
   // Amount paid controller (used for Partial payment status)
   final TextEditingController _amountPaidController = TextEditingController(text: '');
@@ -57,17 +68,19 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
     super.initState();
     _cartItems = List.from(widget.selectedItems);
     _quantities = widget.initialQuantities.map((key, value) => MapEntry(key, value.toDouble()));
+    _priceTypes = {};
 
     // Generate random invoice: BZ + 8 digits
     final random = Random();
     final digits = List.generate(8, (_) => random.nextInt(10).toString()).join();
     _invoiceNo = 'BZ$digits';
 
-    // Make sure we have a quantity of at least 1 for each cart item
+    // Make sure we have a quantity of at least 1 and default price type for each cart item
     for (final item in _cartItems) {
       if (!_quantities.containsKey(item.id) || _quantities[item.id]! <= 0) {
         _quantities[item.id] = 1.0;
       }
+      _priceTypes[item.id] = widget.defaultPriceType;
     }
   }
 
@@ -79,13 +92,23 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
     super.dispose();
   }
 
-  // Calculate Subtotal
+  // Calculate Subtotal using PriceCalculator
   double _calculateSubtotal() {
     double sub = 0;
     for (final item in _cartItems) {
       final qty = _quantities[item.id] ?? 0.0;
-      final price = item.sellPrice;
-      sub += price * qty;
+      final priceType = _priceTypes[item.id] ?? 'wholesale';
+      try {
+        sub += PriceCalculator.calculateLineTotal(
+          quantity: qty,
+          wholesalePrice: item.sellPrice,
+          halfUnitPrice: item.halfUnitPrice,
+          retailPrice: item.retailPrice,
+          priceType: priceType,
+        );
+      } catch (_) {
+        sub += item.sellPrice * qty;
+      }
     }
     return sub;
   }
@@ -166,6 +189,9 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ─── Global Pricing Mode Selector ────────────────────────
+                    _buildPricingModeCard(),
+
                     // ─── Items Header Row ────────────────────────────────────
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -215,12 +241,17 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                         itemBuilder: (context, index) {
                           final item = _cartItems[index];
                           final qty = _quantities[item.id] ?? 1.0;
-                          final price = item.sellPrice;
+                          final priceType = _priceTypes[item.id] ?? 'wholesale';
+                          final retailP = item.retailPrice ?? 0.0;
+                          final price = (priceType == 'retail' && retailP > 0)
+                              ? retailP
+                              : item.sellPrice;
 
                           return CartItemTile(
                             item: item,
                             quantity: qty,
                             unitPrice: price,
+                            priceType: priceType,
                             onQuantityChanged: (newQty) {
                               setState(() {
                                 _quantities[item.id] = newQty;
@@ -230,6 +261,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                               setState(() {
                                 _cartItems.removeAt(index);
                                 _quantities.remove(item.id);
+                                _priceTypes.remove(item.id);
                               });
                             },
                           );
@@ -270,23 +302,28 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                       total: total,
                       balanceOwed: balanceOwed,
                       isCustomerSelected: _selectedCustomer != 'None' && _selectedCustomer.isNotEmpty,
-                      onMethodChanged: (method) {
-                        final hasCustomer = _selectedCustomer != 'None' && _selectedCustomer.isNotEmpty;
-                        if (method == 'Credit' && !hasCustomer) {
-                          showGlobalToast(
-                            message: 'Please select a customer first to sell on credit',
-                            status: 'warning',
-                          );
-                          return;
-                        }
+                      onMethodChanged: (method) async {
                         setState(() {
                           _paymentMethod = method;
-                          if (method == 'Credit') {
-                            _paymentStatus = 'Unpaid';
-                          } else {
-                            _paymentStatus = 'Paid';
-                          }
                         });
+                        if (method == 'Multiple') {
+                          final result = await MultiplePaymentSheet.show(
+                            context,
+                            totalAmount: total,
+                            initialCash: _splitCash,
+                            initialMobile: _splitMobile,
+                            initialBank: _splitBank,
+                          );
+                          if (result != null) {
+                            setState(() {
+                              _paymentMethod = result.formattedMethod;
+                              _amountPaidController.text = result.totalPaid.toStringAsFixed(0);
+                              _splitCash = result.cashAmount;
+                              _splitMobile = result.mobileAmount;
+                              _splitBank = result.bankAmount;
+                            });
+                          }
+                        }
                       },
                       onStatusChanged: (status) {
                         final hasCustomer = _selectedCustomer != 'None' && _selectedCustomer.isNotEmpty;
@@ -394,6 +431,9 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
         paymentStatus: _paymentStatus,
         initialPartialText: initialPartialText,
         initialPaymentMethod: _paymentMethod,
+        initialSplitCash: _splitCash,
+        initialSplitMobile: _splitMobile,
+        initialSplitBank: _splitBank,
         onConfirm: (amountReceived, selectedMethod) async {
           // ── Connectivity gate ───────────────────────
           if (!await requireConnectivity()) return;
@@ -408,11 +448,24 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
           final receiptItems = _cartItems.map((item) {
             final qty = _quantities[item.id] ?? 1.0;
             final price = item.sellPrice;
+            final priceType = _priceTypes[item.id] ?? 'wholesale';
+            double lineTotal;
+            try {
+              lineTotal = PriceCalculator.calculateLineTotal(
+                quantity: qty,
+                wholesalePrice: price,
+                halfUnitPrice: item.halfUnitPrice,
+                retailPrice: item.retailPrice,
+                priceType: priceType,
+              );
+            } catch (_) {
+              lineTotal = price * qty;
+            }
             return ReceiptItem(
               name: item.name,
               quantity: qty,
               unitPrice: price,
-              total: price * qty,
+              total: lineTotal,
             );
           }).toList();
 
@@ -448,19 +501,31 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
             totalAmount: calculatedTotal,
             amountPaid: finalAmountPaid,
             discount: calculatedDiscount,
-            paymentMethod: isUnpaid
-                ? 'credit'
-                : (selectedMethod.toLowerCase() == 'cash' ? 'cash' : 'transfer'),
+            paymentMethod: isUnpaid ? 'credit' : selectedMethod,
             status: _paymentStatus == 'Unpaid' ? 'debt' : _paymentStatus.toLowerCase(),
             invoiceNo: _invoiceNo,
             items: _cartItems.map((item) {
               final qty = _quantities[item.id] ?? 1.0;
+              final priceType = _priceTypes[item.id] ?? 'wholesale';
+              double lineTotal;
+              try {
+                lineTotal = PriceCalculator.calculateLineTotal(
+                  quantity: qty,
+                  wholesalePrice: item.sellPrice,
+                  halfUnitPrice: item.halfUnitPrice,
+                  retailPrice: item.retailPrice,
+                  priceType: priceType,
+                );
+              } catch (_) {
+                lineTotal = item.sellPrice * qty;
+              }
               return {
                 'productId': item.id,
                 'productName': item.name,
                 'quantity': qty,
                 'unitPrice': item.sellPrice,
-                'total': item.sellPrice * qty,
+                'total': lineTotal,
+                'priceType': priceType,
               };
             }).toList(),
           );
@@ -492,6 +557,89 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
             );
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildPricingModeCard() {
+    final allWholesale = _cartItems.every((item) => (_priceTypes[item.id] ?? 'wholesale') == 'wholesale');
+    final allRetail = _cartItems.every((item) => (_priceTypes[item.id] ?? 'wholesale') == 'retail');
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Icon(Icons.sell_outlined, color: const Color(0xFF64748B), size: 16.sp),
+                SizedBox(width: 6.w),
+                Flexible(
+                  child: Text(
+                    'Pricing Mode',
+                    style: TextStyle(
+                      color: const Color(0xFF1E293B),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.sp,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            children: [
+              _buildGlobalPill('wholesale', 'Wholesale', isSelected: allWholesale),
+              SizedBox(width: 4.w),
+              _buildGlobalPill('retail', 'Retail', isSelected: allRetail),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlobalPill(String type, String label, {required bool isSelected}) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          for (final item in _cartItems) {
+            _priceTypes[item.id] = type;
+          }
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (type == 'retail' ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF))
+              : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: isSelected
+                ? (type == 'retail' ? const Color(0xFFF59E0B) : const Color(0xFF3B82F6))
+                : const Color(0xFFE2E8F0),
+            width: 1.2,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected
+                ? (type == 'retail' ? const Color(0xFF92400E) : const Color(0xFF1E40AF))
+                : const Color(0xFF94A3B8),
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 11.5.sp,
+          ),
+        ),
       ),
     );
   }

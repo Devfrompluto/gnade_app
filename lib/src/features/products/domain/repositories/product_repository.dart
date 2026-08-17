@@ -16,6 +16,8 @@ abstract class ProductRepository {
     DateTime? expiryDate,
     String? supplierId,
     String? supplierName,
+    double? halfUnitPrice,
+    double? retailPrice,
   });
 
   FutureEither<List<String>> getCategories(String businessId);
@@ -35,5 +37,7 @@ abstract class ProductRepository {
     DateTime? expiryDate,
     String? supplierId,
     String? supplierName,
+    double? halfUnitPrice,
+    double? retailPrice,
   });
 }

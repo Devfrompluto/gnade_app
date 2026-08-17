@@ -116,9 +116,10 @@ class SalesRepositoryImpl implements SalesRepository {
           'sale_id': saleId,
           'product_id': item['productId'],
           'product_name': item['productName'],
-          'quantity': (item['quantity'] as double).toInt(),
+          'quantity': item['quantity'],
           'unit_price': item['unitPrice'],
           'total': item['total'],
+          'price_type': item['priceType'] ?? 'wholesale',
         };
       }).toList();
 
@@ -130,7 +131,7 @@ class SalesRepositoryImpl implements SalesRepository {
           'sale_id': saleId,
           'business_id': businessId,
           'amount': amountPaid,
-          'payment_method': paymentMethod.toLowerCase(),
+          'payment_method': paymentMethod,
           'type': 'payment',
           'note': 'Initial Payment',
         });
@@ -143,7 +144,7 @@ class SalesRepositoryImpl implements SalesRepository {
         if (productId != null) {
           await _supabaseClient.rpc<void>('decrement_stock', params: {
             'product_id': productId,
-            'qty': quantity.toInt(),
+            'qty': quantity,
           });
         }
       }
@@ -233,7 +234,7 @@ class SalesRepositoryImpl implements SalesRepository {
       // 1. Restock products into inventory using RPC
       for (final item in refundedItems) {
         final productId = item['productId'];
-        final qty = (item['quantity'] as num).toInt();
+        final qty = (item['quantity'] as num).toDouble();
         if (productId != null && qty > 0) {
           await _supabaseClient.rpc<void>('increment_stock', params: {
             'product_id': productId,
@@ -268,7 +269,7 @@ class SalesRepositoryImpl implements SalesRepository {
           final newTotal = newQty * unitPrice;
 
           await _supabaseClient.from('sale_items').update({
-            'quantity': newQty.toInt(),
+            'quantity': newQty,
             'total': newTotal,
           }).eq('id', saleItem['id']);
         }

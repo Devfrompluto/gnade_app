@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gnade_app/src/imports/core_imports.dart';
 import '../providers/sales_providers.dart';
+import 'multiple_payment_sheet.dart';
 
 class CompleteSaleSheet extends ConsumerStatefulWidget {
   final double total;
@@ -9,6 +10,9 @@ class CompleteSaleSheet extends ConsumerStatefulWidget {
   final String paymentStatus;
   final String initialPartialText;
   final String initialPaymentMethod;
+  final double initialSplitCash;
+  final double initialSplitMobile;
+  final double initialSplitBank;
   final Future<void> Function(double amountReceived, String selectedMethod) onConfirm;
 
   const CompleteSaleSheet({
@@ -18,6 +22,9 @@ class CompleteSaleSheet extends ConsumerStatefulWidget {
     required this.paymentStatus,
     required this.initialPartialText,
     required this.initialPaymentMethod,
+    this.initialSplitCash = 0.0,
+    this.initialSplitMobile = 0.0,
+    this.initialSplitBank = 0.0,
     required this.onConfirm,
   });
 
@@ -27,9 +34,17 @@ class CompleteSaleSheet extends ConsumerStatefulWidget {
 
 class _CompleteSaleSheetState extends ConsumerState<CompleteSaleSheet> {
   late TextEditingController _amountController;
+  late TextEditingController _multipleCashController;
+  late TextEditingController _multipleOtherController;
   late String _selectedMethod;
+  String _selectedOtherMethod = 'Mobile';
   late double _amountReceived;
   late List<double> _quickAmounts;
+
+  // Persisted split amounts
+  double _splitCash = 0.0;
+  double _splitMobile = 0.0;
+  double _splitBank = 0.0;
 
   @override
   void initState() {
@@ -42,8 +57,17 @@ class _CompleteSaleSheetState extends ConsumerState<CompleteSaleSheet> {
           : (widget.isUnpaid ? '0.00' : widget.total.toStringAsFixed(2)),
     );
     
-    _selectedMethod = widget.isUnpaid ? 'Credit' : widget.initialPaymentMethod;
-    
+    _selectedMethod = widget.isUnpaid ? 'Cash' : widget.initialPaymentMethod;
+    if (_selectedMethod == 'Credit') _selectedMethod = 'Cash';
+
+    _multipleCashController = TextEditingController();
+    _multipleOtherController = TextEditingController();
+
+    // Restore split amounts from New Sale screen
+    _splitCash = widget.initialSplitCash;
+    _splitMobile = widget.initialSplitMobile;
+    _splitBank = widget.initialSplitBank;
+
     _amountReceived = widget.paymentStatus == 'Partial'
         ? initialPartialVal
         : (widget.isUnpaid ? 0.0 : widget.total);
@@ -68,9 +92,30 @@ class _CompleteSaleSheetState extends ConsumerState<CompleteSaleSheet> {
     }
   }
 
+  bool _isMethodSelected(String targetMethod) {
+    final current = _selectedMethod.trim().toLowerCase();
+    final target = targetMethod.trim().toLowerCase();
+
+    if (target == 'multiple') {
+      return current.startsWith('multiple');
+    }
+    if (target == 'mobile') {
+      return current == 'mobile' || current == 'transfer';
+    }
+    if (target == 'bank') {
+      return current == 'bank' || current == 'pos';
+    }
+    if (target == 'cash') {
+      return current == 'cash';
+    }
+    return current == target;
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
+    _multipleCashController.dispose();
+    _multipleOtherController.dispose();
     super.dispose();
   }
 
@@ -301,99 +346,122 @@ class _CompleteSaleSheetState extends ConsumerState<CompleteSaleSheet> {
                   child: _buildPaymentMethodCard(
                     title: 'Cash',
                     icon: Icons.payments_outlined,
-                    isSelected: _selectedMethod == 'Cash',
-                    onTap: () => setState(() => _selectedMethod = 'Cash'),
+                    isSelected: _isMethodSelected('Cash'),
+                    onTap: () => setState(() {
+                      _selectedMethod = 'Cash';
+                      _amountReceived = double.tryParse(_amountController.text) ?? widget.total;
+                    }),
                   ),
                 ),
-                SizedBox(width: 6.w),
+                SizedBox(width: 4.w),
                 Expanded(
                   child: _buildPaymentMethodCard(
                     title: 'Mobile',
                     icon: Icons.phone_android_outlined,
-                    isSelected: _selectedMethod == 'Mobile',
-                    onTap: () => setState(() => _selectedMethod = 'Mobile'),
+                    isSelected: _isMethodSelected('Mobile'),
+                    onTap: () => setState(() {
+                      _selectedMethod = 'Mobile';
+                      _amountReceived = double.tryParse(_amountController.text) ?? widget.total;
+                    }),
                   ),
                 ),
-                SizedBox(width: 6.w),
+                SizedBox(width: 4.w),
                 Expanded(
                   child: _buildPaymentMethodCard(
                     title: 'Bank',
                     icon: Icons.account_balance_outlined,
-                    isSelected: _selectedMethod == 'Bank',
-                    onTap: () => setState(() => _selectedMethod = 'Bank'),
+                    isSelected: _isMethodSelected('Bank'),
+                    onTap: () => setState(() {
+                      _selectedMethod = 'Bank';
+                      _amountReceived = double.tryParse(_amountController.text) ?? widget.total;
+                    }),
+                  ),
+                ),
+                SizedBox(width: 4.w),
+                Expanded(
+                  child: _buildPaymentMethodCard(
+                    title: 'Multiple',
+                    icon: Icons.call_split_rounded,
+                    isSelected: _isMethodSelected('Multiple'),
+                    onTap: () async {
+                      setState(() {
+                        _selectedMethod = 'Multiple';
+                      });
+                      await _openMultiplePaymentSheet();
+                    },
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
 
             // ── Amount Received Input ──────────────────────────────
-            Text(
-              'Amount Received (₦)',
-              style: TextStyle(
-                color: const Color(0xFF1E293B),
-                fontSize: 12.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Container(
-              height: 48.h,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10.r),
-                border: Border.all(
-                  color: const Color(0xFFE2E8F0),
-                  width: 1.2,
-                ),
-              ),
-              child: TextField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              Text(
+                'Amount Received (₦)',
                 style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
                   color: const Color(0xFF1E293B),
-                ),
-                onChanged: (val) {
-                  setState(() {
-                    _amountReceived = double.tryParse(val) ?? 0;
-                  });
-                },
-                decoration: InputDecoration(
-                  prefixText: '₦  ',
-                  prefixStyle: TextStyle(
-                    color: const Color(0xFF1E293B),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.sp,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                      vertical: 14.h, horizontal: 12.w),
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            SizedBox(height: 10.h),
-
-            // ── Quick Amount Pills ────────────────────────────────
-            Row(
-              children: _quickAmounts
-                  .take(3)
-                  .map(
-                    (amount) => Padding(
-                      padding: EdgeInsets.only(right: 8.w),
-                      child: _buildQuickAmountPill(
-                        text: '₦${(amount / 1000).toStringAsFixed(0)}k',
-                        onTap: () {
-                          _amountController.text = amount.toStringAsFixed(0);
-                          setState(() => _amountReceived = amount);
-                        },
-                      ),
+              SizedBox(height: 8.h),
+              Container(
+                height: 48.h,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 1.2,
+                  ),
+                ),
+                child: TextField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E293B),
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      _amountReceived = double.tryParse(val) ?? 0;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    prefixText: '₦  ',
+                    prefixStyle: TextStyle(
+                      color: const Color(0xFF1E293B),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.sp,
                     ),
-                  )
-                  .toList(),
-            ),
-            SizedBox(height: 14.h),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                        vertical: 14.h, horizontal: 12.w),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10.h),
+
+              // ── Quick Amount Pills ────────────────────────────────
+              Row(
+                children: _quickAmounts
+                    .take(3)
+                    .map(
+                      (amount) => Padding(
+                        padding: EdgeInsets.only(right: 8.w),
+                        child: _buildQuickAmountPill(
+                          text: '₦${(amount / 1000).toStringAsFixed(0)}k',
+                          onTap: () {
+                            _amountController.text = amount.toStringAsFixed(0);
+                            setState(() => _amountReceived = amount);
+                          },
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+              SizedBox(height: 14.h),
 
             // ── Change Due Banner ─────────────────────────────────
             if (changeDue > 0)
@@ -471,7 +539,13 @@ class _CompleteSaleSheetState extends ConsumerState<CompleteSaleSheet> {
                         return;
                       }
                       
-                      await widget.onConfirm(_amountReceived, _selectedMethod);
+                      final cashVal = double.tryParse(_multipleCashController.text) ?? 0.0;
+                      final otherVal = double.tryParse(_multipleOtherController.text) ?? 0.0;
+                      final String finalMethod = _selectedMethod == 'Multiple'
+                          ? 'Multiple (Cash: ₦${NumberFormat('#,##0').format(cashVal)}, $_selectedOtherMethod: ₦${NumberFormat('#,##0').format(otherVal)})'
+                          : _selectedMethod;
+
+                      await widget.onConfirm(_amountReceived, finalMethod);
                     },
               child: checkoutState.isLoading
                   ? SizedBox(
@@ -511,5 +585,34 @@ class _CompleteSaleSheetState extends ConsumerState<CompleteSaleSheet> {
         ],
       ),
     );
+  }
+
+  Future<void> _openMultiplePaymentSheet() async {
+    final result = await MultiplePaymentSheet.show(
+      context,
+      totalAmount: widget.total,
+      initialCash: _splitCash,
+      initialMobile: _splitMobile,
+      initialBank: _splitBank,
+    );
+
+    if (result != null) {
+      setState(() {
+        _splitCash = result.cashAmount;
+        _splitMobile = result.mobileAmount;
+        _splitBank = result.bankAmount;
+
+        _multipleCashController.text = result.cashAmount > 0 ? result.cashAmount.toStringAsFixed(0) : '';
+        if (result.bankAmount > 0 && result.mobileAmount == 0) {
+          _selectedOtherMethod = 'Bank';
+          _multipleOtherController.text = result.bankAmount.toStringAsFixed(0);
+        } else {
+          _selectedOtherMethod = 'Mobile';
+          _multipleOtherController.text = result.mobileAmount.toStringAsFixed(0);
+        }
+        _amountReceived = result.totalPaid;
+        _selectedMethod = result.formattedMethod;
+      });
+    }
   }
 }

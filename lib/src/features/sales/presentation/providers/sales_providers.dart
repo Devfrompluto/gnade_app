@@ -8,7 +8,7 @@ final salesRepositoryProvider = Provider<SalesRepository>((ref) {
   return SalesRepositoryImpl(Supabase.instance.client);
 });
 
-// Selected Date Filter: 0: Today, 1: Yesterday, 2: Last 7 Days, 3: Custom
+// Selected Date Filter: 0: Today, 1: Yesterday, 2: Last 7 Days, 3: This Month, 4: Custom
 final salesDateFilterProvider = StateProvider<int>((ref) => 0);
 
 // Custom Date Range Provider (for Custom Date Filter option)
@@ -23,7 +23,7 @@ Map<String, DateTime> resolveSalesDateRange(int filterIndex, DateTimeRange? cust
   final todayStart = DateTime(now.year, now.month, now.day, 0, 0, 0);
   final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
-  if (filterIndex == 3 && customRange != null) {
+  if (filterIndex == 4 && customRange != null) {
     return {
       'start': DateTime(customRange.start.year, customRange.start.month, customRange.start.day, 0, 0, 0),
       'end': DateTime(customRange.end.year, customRange.end.month, customRange.end.day, 23, 59, 59),
@@ -44,6 +44,16 @@ Map<String, DateTime> resolveSalesDateRange(int filterIndex, DateTimeRange? cust
       return {
         'start': DateTime(start.year, start.month, start.day, 0, 0, 0),
         'end': todayEnd,
+      };
+    case 3: // This Month
+      final monthStart = DateTime(now.year, now.month, 1, 0, 0, 0);
+      final nextMonthFirst = (now.month == 12)
+          ? DateTime(now.year + 1, 1, 1)
+          : DateTime(now.year, now.month + 1, 1);
+      final monthEnd = nextMonthFirst.subtract(const Duration(seconds: 1));
+      return {
+        'start': monthStart,
+        'end': monthEnd,
       };
     default:
       return {'start': todayStart, 'end': todayEnd};

@@ -5,7 +5,12 @@ import '../providers/customer_providers.dart';
 import '../widgets/widgets.dart';
 
 class AddCustomerScreen extends ConsumerStatefulWidget {
-  const AddCustomerScreen({super.key});
+  final Customer? initialCustomer;
+
+  const AddCustomerScreen({
+    super.key,
+    this.initialCustomer,
+  });
 
   @override
   ConsumerState<AddCustomerScreen> createState() => _AddCustomerScreenState();
@@ -14,11 +19,24 @@ class AddCustomerScreen extends ConsumerStatefulWidget {
 class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _notesController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _notesController;
+
+  bool get _isEditing => widget.initialCustomer != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final c = widget.initialCustomer;
+    _nameController = TextEditingController(text: c?.name ?? '');
+    _phoneController = TextEditingController(text: c?.phone ?? '');
+    _emailController = TextEditingController(text: c?.email ?? '');
+    _addressController = TextEditingController(text: c?.address ?? '');
+    _notesController = TextEditingController(text: c?.notes ?? '');
+  }
 
   @override
   void dispose() {
@@ -40,21 +58,38 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     final address = _addressController.text.trim();
     final notes = _notesController.text.trim();
 
-    final result = await ref.read(customerListProvider.notifier).addCustomer(
-      name: name,
-      phone: phone,
-      email: email.isNotEmpty ? email : null,
-      address: address.isNotEmpty ? address : null,
-      notes: notes.isNotEmpty ? notes : null,
-    );
+    Customer? result;
+    if (_isEditing) {
+      result = await ref.read(customerListProvider.notifier).updateCustomer(
+        id: widget.initialCustomer!.id,
+        name: name,
+        phone: phone,
+        email: email.isNotEmpty ? email : null,
+        address: address.isNotEmpty ? address : null,
+        notes: notes.isNotEmpty ? notes : null,
+      );
+    } else {
+      result = await ref.read(customerListProvider.notifier).addCustomer(
+        name: name,
+        phone: phone,
+        email: email.isNotEmpty ? email : null,
+        address: address.isNotEmpty ? address : null,
+        notes: notes.isNotEmpty ? notes : null,
+      );
+    }
 
     if (!mounted) return;
 
     if (result != null) {
-      showGlobalToast(message: 'Customer saved successfully!');
+      showGlobalToast(
+        message: _isEditing ? 'Customer updated successfully!' : 'Customer saved successfully!',
+      );
       context.pop(result);
     } else {
-      showGlobalToast(message: 'Failed to save customer.', status: 'error');
+      showGlobalToast(
+        message: _isEditing ? 'Failed to update customer.' : 'Failed to save customer.',
+        status: 'error',
+      );
     }
   }
 
@@ -123,8 +158,8 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
       behavior: HitTestBehavior.opaque,
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
-        appBar: const AppCustomAppBar(
-          title: 'Add Customer',
+        appBar: AppCustomAppBar(
+          title: _isEditing ? 'Edit Customer' : 'Add Customer',
         ),
         body: SafeArea(
           child: Column(

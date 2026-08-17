@@ -250,24 +250,33 @@ class SaleSuccessScreen extends ConsumerWidget {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.payments_outlined,
-                                          color: const Color(0xFF64748B),
-                                          size: 16.sp,
-                                        ),
-                                        SizedBox(width: 6.w),
-                                        Text(
-                                          '$paymentMethod Payment',
-                                          style: TextStyle(
-                                            color: const Color(0xFF334155),
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.bold,
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.payments_outlined,
+                                            color: const Color(0xFF64748B),
+                                            size: 16.sp,
                                           ),
-                                        ),
-                                      ],
+                                          SizedBox(width: 6.w),
+                                          Expanded(
+                                            child: Text(
+                                              paymentMethod.toLowerCase().startsWith('multiple')
+                                                  ? paymentMethod
+                                                  : '$paymentMethod Payment',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: const Color(0xFF334155),
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
+                                    SizedBox(width: 8.w),
                                     Text(
                                       formattedDate,
                                       style: TextStyle(

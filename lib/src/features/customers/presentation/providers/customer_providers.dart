@@ -49,6 +49,48 @@ class CustomerListNotifier extends StateNotifier<List<Customer>> {
       },
     );
   }
+
+  Future<Customer?> updateCustomer({
+    required String id,
+    required String name,
+    required String phone,
+    String? email,
+    String? address,
+    String? notes,
+  }) async {
+    final result = await _repository.updateCustomer(
+      id: id,
+      name: name,
+      phone: phone,
+      email: email,
+      address: address,
+      notes: notes,
+    );
+    return result.fold(
+      (failure) {
+        AppLogger.error('Failed to update customer: ${failure.message}');
+        return null;
+      },
+      (updatedCustomer) {
+        state = state.map((c) => c.id == id ? updatedCustomer : c).toList();
+        return updatedCustomer;
+      },
+    );
+  }
+
+  Future<bool> deleteCustomer(String id) async {
+    final result = await _repository.deleteCustomer(id);
+    return result.fold(
+      (failure) {
+        AppLogger.error('Failed to delete customer: ${failure.message}');
+        return false;
+      },
+      (_) {
+        state = state.where((c) => c.id != id).toList();
+        return true;
+      },
+    );
+  }
 }
 
 // State Providers

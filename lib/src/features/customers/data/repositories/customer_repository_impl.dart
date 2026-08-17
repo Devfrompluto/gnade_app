@@ -134,4 +134,43 @@ class CustomerRepositoryImpl implements CustomerRepository {
       return left<Failure, Customer>(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  FutureEither<Customer> updateCustomer({
+    required String id,
+    required String name,
+    required String phone,
+    String? email,
+    String? address,
+    String? notes,
+  }) async {
+    try {
+      final response = await _supabaseClient
+          .from('customers')
+          .update({
+            'name': name,
+            'phone': phone,
+            'email': email,
+            'address': address,
+            'notes': notes,
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+      return right<Failure, Customer>(CustomerModel.fromMap(response));
+    } catch (e) {
+      return left<Failure, Customer>(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  FutureEither<void> deleteCustomer(String id) async {
+    try {
+      await _supabaseClient.from('customers').delete().eq('id', id);
+      return right<Failure, void>(null);
+    } catch (e) {
+      return left<Failure, void>(ServerFailure(e.toString()));
+    }
+  }
 }
