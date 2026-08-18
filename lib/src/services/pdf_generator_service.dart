@@ -84,7 +84,7 @@ class PdfGeneratorService {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
-                            data.businessName,
+                            _cleanText(data.businessName),
                             style: const pw.TextStyle(
                               color: _primaryBlue,
                               fontSize: 20,
@@ -93,12 +93,12 @@ class PdfGeneratorService {
                           ),
                           pw.SizedBox(height: 4),
                           pw.Text(
-                            data.businessAddress,
+                            _cleanText(data.businessAddress),
                             style: const pw.TextStyle(color: _mediumText, fontSize: 9),
                           ),
                           pw.SizedBox(height: 2),
                           pw.Text(
-                            'Tel: ${data.businessPhone}${data.businessEmail != null ? '  |  ${data.businessEmail}' : ''}',
+                            _cleanText('Tel: ${data.businessPhone}${data.businessEmail != null ? '  |  ${data.businessEmail}' : ''}'),
                             style: const pw.TextStyle(color: _lightText, fontSize: 9),
                           ),
                         ],
@@ -230,7 +230,7 @@ class PdfGeneratorService {
                     children: [
                       pw.Expanded(
                         flex: 4,
-                        child: pw.Text(item.name,
+                        child: pw.Text(_cleanText(item.name),
                             style: const pw.TextStyle(color: _mediumText, fontSize: 10)),
                       ),
                       pw.Expanded(
@@ -380,7 +380,162 @@ class PdfGeneratorService {
     return pdf.save();
   }
 
+  Future<Uint8List> generatePosReceipt(ReceiptData data) async {
+    final pdf = pw.Document();
+    final logoImage = await _loadLogoImage(data.businessLogoUrl);
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: const PdfPageFormat(
+          80 * PdfPageFormat.mm,
+          double.infinity,
+          marginTop: 14,
+          marginBottom: 14,
+          marginLeft: 10,
+          marginRight: 10,
+        ),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            mainAxisSize: pw.MainAxisSize.min,
+            children: [
+              if (logoImage != null) ...[
+                _buildLogoWidget(logoImage, data.businessName),
+                pw.SizedBox(height: 6),
+              ],
+              // Business Name
+              pw.Text(
+                data.businessName.toUpperCase(),
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(
+                  fontSize: 13,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _primaryBlue,
+                ),
+              ),
+              if (data.businessAddress.isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  data.businessAddress,
+                  textAlign: pw.TextAlign.center,
+                  style: const pw.TextStyle(fontSize: 8, color: _mediumText),
+                ),
+              ],
+              if (data.businessPhone.isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  'Tel: ${data.businessPhone}',
+                  textAlign: pw.TextAlign.center,
+                  style: const pw.TextStyle(fontSize: 8, color: _lightText),
+                ),
+              ],
+              pw.SizedBox(height: 8),
+              pw.Divider(thickness: 0.5, color: _borderColor),
+              pw.SizedBox(height: 4),
+
+              // Invoice Metadata
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Invoice #: ${data.invoiceNo}', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _darkText)),
+                  pw.Text(DateFormat('dd/MM/yy HH:mm').format(data.dateTime), style: const pw.TextStyle(fontSize: 8, color: _lightText)),
+                ],
+              ),
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Customer: ${data.customerName}', style: const pw.TextStyle(fontSize: 8, color: _mediumText)),
+                  pw.Text('Status: ${data.paymentStatus}', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _stampColor(data.paymentStatus))),
+                ],
+              ),
+              pw.SizedBox(height: 6),
+              pw.Divider(thickness: 0.5, color: _borderColor),
+              pw.SizedBox(height: 6),
+
+              // Items Header
+              pw.Row(
+                children: [
+                  pw.Expanded(flex: 4, child: pw.Text('ITEM', style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _darkText))),
+                  pw.Expanded(flex: 1, child: pw.Text('QTY', textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _darkText))),
+                  pw.Expanded(flex: 2, child: pw.Text('TOTAL', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _darkText))),
+                ],
+              ),
+              pw.SizedBox(height: 4),
+              ...data.items.map((item) => pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                    child: pw.Row(
+                      children: [
+                        pw.Expanded(flex: 4, child: pw.Text(_cleanText(item.name), style: const pw.TextStyle(fontSize: 8, color: _mediumText))),
+                        pw.Expanded(flex: 1, child: pw.Text(item.quantity.toStringAsFixed(0), textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 8, color: _mediumText))),
+                        pw.Expanded(flex: 2, child: pw.Text('N${NumberFormat('#,##0').format(item.total)}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _darkText))),
+                      ],
+                    ),
+                  )),
+              pw.SizedBox(height: 6),
+              pw.Divider(thickness: 0.5, color: _borderColor),
+              pw.SizedBox(height: 6),
+
+              // Totals Block
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('TOTAL', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: _primaryBlue)),
+                  pw.Text('N${NumberFormat('#,##0').format(data.total)}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _primaryBlue)),
+                ],
+              ),
+              if (data.amountPaid > 0) ...[
+                pw.SizedBox(height: 2),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Amount Paid:', style: const pw.TextStyle(fontSize: 8, color: _lightText)),
+                    pw.Text('N${NumberFormat('#,##0').format(data.amountPaid)}', style: const pw.TextStyle(fontSize: 8, color: _mediumText)),
+                  ],
+                ),
+              ],
+              if (data.total - data.amountPaid > 0) ...[
+                pw.SizedBox(height: 2),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Balance Due:', style: const pw.TextStyle(fontSize: 8, color: _stampRed)),
+                    pw.Text('N${NumberFormat('#,##0').format(data.total - data.amountPaid)}', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _stampRed)),
+                  ],
+                ),
+              ],
+              pw.SizedBox(height: 10),
+
+              // Barcode Graphic & Footer
+              pw.Text(
+                '||| | ||||| || |||||| | |||| | |||',
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _mediumText),
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(data.invoiceNo, textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 7, color: _lightText)),
+              pw.SizedBox(height: 8),
+
+              pw.Text('Thank you for your business!\nPlease retain receipt for any claim within 7 days.', textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 7, color: _lightText)),
+              pw.SizedBox(height: 6),
+              pw.Text('- - - - - - - - - Tear Here - - - - - - - - -', textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 6, color: _borderColor)),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────
+
+  static String _cleanText(String text) {
+    return text
+        .replaceAll('₦', 'N')
+        .replaceAll('✂', '-')
+        .replaceAll('•', '-');
+  }
 
   /// Builds either a network-loaded logo image or a text-initials circle fallback.
   static pw.Widget _buildLogoWidget(pw.MemoryImage? logoImage, String businessName) {
@@ -411,10 +566,10 @@ class PdfGeneratorService {
   static pw.Widget _metaRow(String label, String value) {
     return pw.Row(
       children: [
-        pw.Text(label,
+        pw.Text(_cleanText(label),
             style: const pw.TextStyle(color: _lightText, fontSize: 9)),
         pw.SizedBox(width: 6),
-        pw.Text(value,
+        pw.Text(_cleanText(value),
             style: const pw.TextStyle(color: _darkText, fontWeight: pw.FontWeight.bold, fontSize: 9)),
       ],
     );
@@ -424,8 +579,8 @@ class PdfGeneratorService {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Text(label, style: const pw.TextStyle(color: _lightText, fontSize: 9)),
-        pw.Text(value,
+        pw.Text(_cleanText(label), style: const pw.TextStyle(color: _lightText, fontSize: 9)),
+        pw.Text(_cleanText(value),
             style: pw.TextStyle(color: valueColor, fontWeight: pw.FontWeight.bold, fontSize: 9)),
       ],
     );

@@ -32,7 +32,7 @@ class POSReceiptPreview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Logo Blue circle with mini cart bag
+          // Logo Blue circle with logo image or mini store icon
           Center(
             child: Container(
               width: 44.w,
@@ -41,10 +41,22 @@ class POSReceiptPreview extends StatelessWidget {
                 color: Color(0xFF2563EB),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.storefront_rounded,
-                color: Colors.white,
-                size: 22.sp,
+              child: ClipOval(
+                child: data.businessLogoUrl != null && data.businessLogoUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: data.businessLogoUrl!,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => Icon(
+                          Icons.storefront_rounded,
+                          color: Colors.white,
+                          size: 22.sp,
+                        ),
+                      )
+                    : Icon(
+                        Icons.storefront_rounded,
+                        color: Colors.white,
+                        size: 22.sp,
+                      ),
               ),
             ),
           ),
@@ -169,7 +181,7 @@ class POSReceiptPreview extends StatelessWidget {
 
           // Items List
           ...data.items.map((item) => Padding(
-                padding: EdgeInsets.symmetric(vertical: 6.h),
+                padding: EdgeInsets.symmetric(vertical: 4.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -178,9 +190,9 @@ class POSReceiptPreview extends StatelessWidget {
                       child: Text(
                         item.name,
                         style: TextStyle(
-                          color: const Color(0xFF334155),
+                          color: const Color(0xFF1E293B),
                           fontWeight: FontWeight.bold,
-                          fontSize: 11.sp,
+                          fontSize: 11.5.sp,
                         ),
                       ),
                     ),
@@ -199,19 +211,19 @@ class POSReceiptPreview extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: Text(
-                        '₦${item.total.toStringAsFixed(0)}',
+                        '₦${NumberFormat('#,##0').format(item.total)}',
                         textAlign: TextAlign.end,
                         style: TextStyle(
-                          color: const Color(0xFF334155),
+                          color: const Color(0xFF0F172A),
                           fontWeight: FontWeight.bold,
-                          fontSize: 11.sp,
+                          fontSize: 11.5.sp,
                         ),
                       ),
                     ),
                   ],
                 ),
               )),
-          SizedBox(height: 12.h),
+          SizedBox(height: 10.h),
 
           // Dotted Divider
           CustomPaint(
@@ -222,20 +234,20 @@ class POSReceiptPreview extends StatelessWidget {
 
           // Subtotal, Tax, Total
           if (data.subtotal > 0)
-            _buildSummaryRow('Subtotal', '₦${data.subtotal.toStringAsFixed(0)}'),
+            _buildSummaryRow('Subtotal', '₦${NumberFormat('#,##0').format(data.subtotal)}'),
           if (data.subtotal > 0)
             SizedBox(height: 6.h),
           if (data.tax > 0)
-            _buildSummaryRow('Tax (7.5% VAT)', '₦${data.tax.toStringAsFixed(0)}'),
+            _buildSummaryRow('Tax (7.5% VAT)', '₦${NumberFormat('#,##0').format(data.tax)}'),
           if (data.tax > 0)
-            SizedBox(height: 12.h),
+            SizedBox(height: 10.h),
 
           // Dotted Divider
           CustomPaint(
             size: Size(double.infinity, 1.h),
             painter: DashedDividerPainter(),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 10.h),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -249,37 +261,38 @@ class POSReceiptPreview extends StatelessWidget {
                 ),
               ),
               Text(
-                '₦${data.total.toStringAsFixed(0)}',
+                '₦${NumberFormat('#,##0').format(data.total)}',
                 style: TextStyle(
                   color: const Color(0xFF0F9F68),
                   fontWeight: FontWeight.w900,
-                  fontSize: 18.sp,
+                  fontSize: 17.sp,
                 ),
               ),
             ],
           ),
 
           // Amount Paid / Balance Owed for Partial/Unpaid
+          SizedBox(height: 6.h),
           if (data.paymentStatus == 'Partial') ...[
-            SizedBox(height: 8.h),
-            _buildSummaryRow('Amount Paid', '₦${data.amountPaid.toStringAsFixed(0)}'),
+            _buildSummaryRow('Amount Paid', '₦${NumberFormat('#,##0').format(data.amountPaid)}'),
             SizedBox(height: 4.h),
             _buildSummaryRow(
-                'Balance Owed', '₦${(data.total - data.amountPaid).toStringAsFixed(0)}'),
+                'Balance Owed', '₦${NumberFormat('#,##0').format(data.total - data.amountPaid)}'),
           ] else if (data.paymentStatus == 'Unpaid') ...[
-            SizedBox(height: 8.h),
             _buildSummaryRow('Amount Paid', '₦0'),
             SizedBox(height: 4.h),
-            _buildSummaryRow('Balance Owed (Debt)', '₦${data.total.toStringAsFixed(0)}'),
+            _buildSummaryRow('Balance Owed (Debt)', '₦${NumberFormat('#,##0').format(data.total)}'),
+          ] else ...[
+            _buildSummaryRow('Amount Paid', '₦${NumberFormat('#,##0').format(data.amountPaid)}'),
           ],
-          SizedBox(height: 16.h),
+          SizedBox(height: 14.h),
 
           // Dotted Divider
           CustomPaint(
             size: Size(double.infinity, 1.h),
             painter: DashedDividerPainter(),
           ),
-          SizedBox(height: 14.h),
+          SizedBox(height: 12.h),
 
           // Payment Status Badge
           Center(
@@ -333,15 +346,57 @@ class POSReceiptPreview extends StatelessWidget {
           ),
           SizedBox(height: 14.h),
 
+          // Barcode representation
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  '||| | ||||| || |||||| | |||| | |||',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    letterSpacing: 2,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF334155),
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  data.invoiceNo,
+                  style: TextStyle(
+                    color: const Color(0xFF64748B),
+                    fontSize: 8.5.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 14.h),
+
           // Footnote
           Center(
             child: Text(
-              'Thank you for your business!',
+              'Thank you for your business!\nPlease retain receipt for any claim within 7 days.',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: const Color(0xFF64748B),
-                fontSize: 10.sp,
+                fontSize: 9.5.sp,
                 fontStyle: FontStyle.italic,
                 fontWeight: FontWeight.w500,
+                height: 1.3,
+              ),
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Center(
+            child: Text(
+              '✂ ----------------------------------------',
+              style: TextStyle(
+                color: const Color(0xFFCBD5E1),
+                fontSize: 8.sp,
+                letterSpacing: 1,
               ),
             ),
           ),

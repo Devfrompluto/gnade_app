@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:gnade_app/src/imports/imports.dart';
 import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:gnade_app/src/features/auth/presentation/providers/auth_provider.dart';
@@ -163,6 +164,47 @@ class BusinessSettingsScreen extends ConsumerWidget {
       }
     }
 
+    Future<void> pickAndUploadLogo() async {
+      if (businessId == null || businessId.isEmpty) {
+        showGlobalToast(message: 'No active business selected', status: 'error');
+        return;
+      }
+
+      try {
+        final picker = ImagePicker();
+        final pickedFile = await picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 600,
+          maxHeight: 600,
+          imageQuality: 80,
+        );
+
+        if (pickedFile == null) return;
+
+        showGlobalToast(message: 'Uploading logo...');
+        final file = File(pickedFile.path);
+        final uploadedUrl = await ref.read(authControllerProvider.notifier).uploadLogo(file);
+
+        if (uploadedUrl != null) {
+          await ref.read(authControllerProvider.notifier).updateBusinessProfile(
+            businessId: businessId,
+            logoUrl: uploadedUrl,
+          );
+          if (context.mounted) {
+            showGlobalToast(message: 'Business logo updated successfully!', status: 'success');
+          }
+        } else {
+          if (context.mounted) {
+            showGlobalToast(message: 'Failed to upload logo. Try again.', status: 'error');
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          showGlobalToast(message: 'Error selecting image', status: 'error');
+        }
+      }
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Light grey background
       appBar: AppTopBar(
@@ -221,6 +263,49 @@ class BusinessSettingsScreen extends ConsumerWidget {
                   SettingsGroupCard(
                     title: 'Business Profile',
                     children: [
+                      SizedBox(height: 8.h),
+                      _buildLogoAvatarHeader(context, ref, business?.logoUrl, businessId, pickAndUploadLogo),
+                      SizedBox(height: 12.h),
+                      Center(
+                        child: Text(
+                          'Business Logo / Receipt Logo',
+                          style: TextStyle(
+                            color: const Color(0xFF64748B),
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      AppSettingsTile(
+                        title: 'Business Logo',
+                        subtitle: business?.logoUrl != null ? 'Logo uploaded' : 'Tap to upload receipt logo',
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (business?.logoUrl != null && business!.logoUrl!.isNotEmpty)
+                              Container(
+                                width: 28.w,
+                                height: 28.w,
+                                margin: EdgeInsets.only(right: 8.w),
+                                decoration: const BoxDecoration(shape: BoxShape.circle),
+                                child: ClipOval(
+                                  child: CachedNetworkImage(
+                                    imageUrl: business.logoUrl!,
+                                    fit: BoxFit.cover,
+                                    errorWidget: (context, url, error) => const Icon(Icons.error_outline),
+                                  ),
+                                ),
+                              ),
+                            Icon(
+                              Icons.camera_alt_rounded,
+                              color: const Color(0xFF2563EB),
+                              size: 20.sp,
+                            ),
+                          ],
+                        ),
+                        onTap: pickAndUploadLogo,
+                      ),
                       AppSettingsTile(
                         title: 'Business Name',
                         subtitle: businessName,
@@ -383,6 +468,77 @@ class BusinessSettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoAvatarHeader(
+    BuildContext context,
+    WidgetRef ref,
+    String? logoUrl,
+    String? businessId,
+    VoidCallback onTapUpload,
+  ) {
+    return Center(
+      child: GestureDetector(
+        onTap: onTapUpload,
+        child: Stack(
+          children: [
+            Container(
+              width: 84.w,
+              height: 84.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFEFF6FF),
+                border: Border.all(color: const Color(0xFFDBEAFE), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: logoUrl != null && logoUrl.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: logoUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
+                        ),
+                        errorWidget: (context, url, error) => Icon(
+                          Icons.storefront_rounded,
+                          size: 38.sp,
+                          color: const Color(0xFF2563EB),
+                        ),
+                      )
+                    : Icon(
+                        Icons.storefront_rounded,
+                        size: 38.sp,
+                        color: const Color(0xFF2563EB),
+                      ),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: EdgeInsets.all(6.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: Icon(
+                  Icons.camera_alt_rounded,
+                  color: Colors.white,
+                  size: 14.sp,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

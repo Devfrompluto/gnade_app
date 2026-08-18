@@ -236,6 +236,7 @@ class AuthService {
     String? category,
     String? phone,
     String? address,
+    String? logoUrl,
   }) async {
     return runTask(() async {
       await _supabaseClient.from('businesses').update({
@@ -243,6 +244,7 @@ class AuthService {
         if (category != null) 'category': category,
         if (phone != null) 'phone': phone,
         if (address != null) 'address': address,
+        if (logoUrl != null) 'logo_url': logoUrl,
       }).eq('id', businessId);
     }, requiresNetwork: true);
   }

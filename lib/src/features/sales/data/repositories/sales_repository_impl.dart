@@ -231,19 +231,7 @@ class SalesRepositoryImpl implements SalesRepository {
     required String reason,
   }) async {
     return runTask(() async {
-      // 1. Restock products into inventory using RPC
-      for (final item in refundedItems) {
-        final productId = item['productId'];
-        final qty = (item['quantity'] as num).toDouble();
-        if (productId != null && qty > 0) {
-          await _supabaseClient.rpc<void>('increment_stock', params: {
-            'product_id': productId,
-            'qty': qty,
-          });
-        }
-      }
-
-      // 2. Fetch current sale_items from DB and update line item quantities & totals
+      // 1. Fetch current sale_items from DB
       final existingSaleItems = List<Map<String, dynamic>>.from(
         await _supabaseClient
             .from('sale_items')
@@ -251,27 +239,59 @@ class SalesRepositoryImpl implements SalesRepository {
             .eq('sale_id', saleId),
       );
 
+      // Restock products into inventory using RPC
+      if (isFullRefund && refundedItems.isEmpty) {
+        for (final saleItem in existingSaleItems) {
+          final productId = saleItem['product_id'];
+          final qty = double.tryParse(saleItem['quantity']?.toString() ?? '0') ?? 0.0;
+          if (productId != null && qty > 0) {
+            await _supabaseClient.rpc<void>('increment_stock', params: {
+              'product_id': productId,
+              'qty': qty,
+            });
+          }
+        }
+      } else {
+        for (final item in refundedItems) {
+          final productId = item['productId'];
+          final qty = (item['quantity'] as num).toDouble();
+          if (productId != null && qty > 0) {
+            await _supabaseClient.rpc<void>('increment_stock', params: {
+              'product_id': productId,
+              'qty': qty,
+            });
+          }
+        }
+      }
+
+      // 2. Update line item quantities & totals in sale_items table
       for (final saleItem in existingSaleItems) {
         final productId = saleItem['product_id'];
         final productName = saleItem['product_name'];
         final currentQty = double.tryParse(saleItem['quantity']?.toString() ?? '0') ?? 0.0;
         final unitPrice = double.tryParse(saleItem['unit_price']?.toString() ?? '0') ?? 0.0;
 
-        // Find match in refundedItems
-        final refItem = refundedItems.firstWhere(
-          (r) => (r['productId'] != null && r['productId'] == productId) || (r['productName'] == productName),
-          orElse: () => <String, dynamic>{},
-        );
-
-        if (refItem.isNotEmpty) {
-          final refundedQty = (refItem['quantity'] as num).toDouble();
-          final newQty = (currentQty - refundedQty).clamp(0.0, double.infinity);
-          final newTotal = newQty * unitPrice;
-
+        if (isFullRefund) {
           await _supabaseClient.from('sale_items').update({
-            'quantity': newQty,
-            'total': newTotal,
+            'quantity': 0,
+            'total': 0,
           }).eq('id', saleItem['id']);
+        } else {
+          final refItem = refundedItems.firstWhere(
+            (r) => (r['productId'] != null && r['productId'] == productId) || (r['productName'] == productName),
+            orElse: () => <String, dynamic>{},
+          );
+
+          if (refItem.isNotEmpty) {
+            final refundedQty = (refItem['quantity'] as num).toDouble();
+            final newQty = (currentQty - refundedQty).clamp(0.0, double.infinity);
+            final newTotal = newQty * unitPrice;
+
+            await _supabaseClient.from('sale_items').update({
+              'quantity': newQty,
+              'total': newTotal,
+            }).eq('id', saleItem['id']);
+          }
         }
       }
 
@@ -293,7 +313,11 @@ class SalesRepositoryImpl implements SalesRepository {
         refundTotal += qty * unitPrice;
       }
 
-      final newTotalAmount = (currentTotalAmount - refundTotal).clamp(0.0, double.infinity);
+      if (isFullRefund || refundTotal == 0) {
+        refundTotal = currentTotalAmount;
+      }
+
+      final newTotalAmount = isFullRefund ? 0.0 : (currentTotalAmount - refundTotal).clamp(0.0, double.infinity);
 
       String newStatus;
       double newAmountPaid;

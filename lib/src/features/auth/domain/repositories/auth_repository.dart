@@ -73,6 +73,7 @@ abstract class AuthRepository {
     String? category,
     String? phone,
     String? address,
+    String? logoUrl,
   });
 
   /// Clear the active business profile

@@ -1,6 +1,8 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
 import '../../../printing/presentation/providers/printer_providers.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
+import '../widgets/share_receipt_options_sheet.dart';
 
 class SaleSuccessScreen extends ConsumerWidget {
   final String invoiceNo;
@@ -378,7 +380,7 @@ class SaleSuccessScreen extends ConsumerWidget {
                         if (checkAndPromptPrinterSetup(context, ref)) {
                           context.push(
                             AppRoutes.printReceipt,
-                            extra: receiptData ?? _createFallbackReceiptData(),
+                            extra: receiptData ?? _createFallbackReceiptData(ref),
                           );
                         }
                       },
@@ -413,7 +415,8 @@ class SaleSuccessScreen extends ConsumerWidget {
                         ),
                       ),
                       onPressed: () {
-                        showGlobalToast(message: 'Opening share options...');
+                        final data = receiptData ?? _createFallbackReceiptData(ref);
+                        showShareReceiptSheet(context, data);
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -455,12 +458,14 @@ class SaleSuccessScreen extends ConsumerWidget {
     );
   }
 
-  ReceiptData _createFallbackReceiptData() {
+  ReceiptData _createFallbackReceiptData(WidgetRef ref) {
+    final businessProfile = ref.read(businessProfileProvider).value;
     return ReceiptData(
-      businessName: 'Kinetic Retail',
-      businessAddress: '',
-      businessPhone: '',
+      businessName: businessProfile?.name ?? 'Kinetic Retail',
+      businessAddress: businessProfile?.address ?? '',
+      businessPhone: businessProfile?.phone ?? '',
       businessEmail: '',
+      businessLogoUrl: businessProfile?.logoUrl,
       invoiceNo: invoiceNo,
       dateTime: dateTime,
       customerName: 'Retail Customer',

@@ -366,6 +366,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String? category,
     String? phone,
     String? address,
+    String? logoUrl,
   }) async {
     return _authService.updateBusinessProfile(
       businessId: businessId,
@@ -373,6 +374,7 @@ class AuthRepositoryImpl implements AuthRepository {
       category: category,
       phone: phone,
       address: address,
+      logoUrl: logoUrl,
     );
   }
 

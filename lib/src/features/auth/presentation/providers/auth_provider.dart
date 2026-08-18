@@ -137,6 +137,7 @@ class AuthController extends StateNotifier<bool> {
     String? category,
     String? phone,
     String? address,
+    String? logoUrl,
   }) async {
     state = true;
     final result = await _repository.updateBusinessProfile(
@@ -145,6 +146,7 @@ class AuthController extends StateNotifier<bool> {
       category: category,
       phone: phone,
       address: address,
+      logoUrl: logoUrl,
     );
     state = false;
 

@@ -128,30 +128,39 @@ class NotificationTile extends ConsumerWidget {
   (Color, Color, IconData) _getCategoryStyle() {
     switch (item.category.toLowerCase()) {
       case 'sales':
+      case 'new_sale':
+      case 'sale':
         return (
           const Color(0xFFEFF6FF), // blue-50
           const Color(0xFF2563EB), // blue-600
           Icons.shopping_cart_outlined,
         );
       case 'stock':
+      case 'low_stock':
+      case 'out_of_stock':
         return (
           const Color(0xFFFFFBEB), // amber-50
           const Color(0xFFD97706), // amber-600
           Icons.warning_amber_rounded,
         );
       case 'expenses':
+      case 'expense':
+      case 'new_expense':
         return (
           const Color(0xFFF1F5F9), // slate-100
           const Color(0xFF64748B), // slate-500
           Icons.receipt_long_outlined,
         );
       case 'debts':
+      case 'debt':
+      case 'debt_reminder':
         return (
           const Color(0xFFFEF2F2), // red-50
           const Color(0xFFEF4444), // red-500
           Icons.account_balance_wallet_outlined,
         );
       case 'summary':
+      case 'daily_summary':
       default:
         return (
           const Color(0xFFF1F5F9), // slate-100

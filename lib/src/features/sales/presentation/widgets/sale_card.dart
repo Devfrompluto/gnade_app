@@ -148,6 +148,70 @@ class SaleCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
 
+          if (sale.status.toLowerCase() == 'partial' ||
+              sale.status.toLowerCase() == 'unpaid' ||
+              sale.status.toLowerCase() == 'debt') ...[
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Paid: ',
+                        style: TextStyle(
+                          color: const Color(0xFF64748B),
+                          fontSize: 11.5.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '₦ ${NumberFormat('#,##0').format(sale.amountPaid)}',
+                        style: TextStyle(
+                          color: const Color(0xFF059669),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: 1,
+                    height: 12.h,
+                    color: const Color(0xFFCBD5E1),
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        'Debt: ',
+                        style: TextStyle(
+                          color: const Color(0xFF64748B),
+                          fontSize: 11.5.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '₦ ${NumberFormat('#,##0').format(sale.balanceDue > 0 ? sale.balanceDue : 0)}',
+                        style: TextStyle(
+                          color: const Color(0xFFDC2626),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8.h),
+          ],
+
           const Divider(color: Color(0xFFF1F5F9), height: 1),
           SizedBox(height: 8.h),
 

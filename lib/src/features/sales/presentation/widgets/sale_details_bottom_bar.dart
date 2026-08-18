@@ -34,14 +34,11 @@ class SaleDetailsBottomBar extends ConsumerWidget {
     );
   }
 
-  void _printReceipt(BuildContext context, WidgetRef ref, String paymentStatus) {
-    if (!checkAndPromptPrinterSetup(context, ref)) return;
-
+  ReceiptData _buildReceiptData(WidgetRef ref, String paymentStatus) {
     final businessProfile = ref.read(businessProfileProvider).value;
     final String bName = businessProfile?.name ?? 'Kinetic Retail';
     final String bAddress = businessProfile?.address ?? '';
     final String bPhone = businessProfile?.phone ?? '';
-    const String bEmail = '';
 
     final receiptItems = (sale.items ?? <SaleItem>[]).map((item) {
       return ReceiptItem(
@@ -66,11 +63,11 @@ class SaleDetailsBottomBar extends ConsumerWidget {
       displayPaymentMethod = 'Credit / Debt';
     }
 
-    final receiptData = ReceiptData(
+    return ReceiptData(
       businessName: bName,
       businessAddress: bAddress,
       businessPhone: bPhone,
-      businessEmail: bEmail,
+      businessEmail: '',
       invoiceNo: sale.invoiceNo,
       dateTime: sale.createdAt,
       customerName: sale.customerName,
@@ -83,7 +80,11 @@ class SaleDetailsBottomBar extends ConsumerWidget {
       paymentMethod: displayPaymentMethod,
       paymentStatus: paymentStatus,
     );
+  }
 
+  void _printReceipt(BuildContext context, WidgetRef ref, String paymentStatus) {
+    if (!checkAndPromptPrinterSetup(context, ref)) return;
+    final receiptData = _buildReceiptData(ref, paymentStatus);
     context.push(AppRoutes.printReceipt, extra: receiptData);
   }
 
@@ -140,7 +141,7 @@ class SaleDetailsBottomBar extends ConsumerWidget {
                 ),
                 SizedBox(height: 10.h),
 
-                // Bottom Row: Refund (Amber Outline) & Print/Share (Blue Outline/Filled)
+                // Bottom Row: Refund (Amber Outline) & Print (Blue Filled)
                 Row(
                   children: [
                     Expanded(
@@ -173,16 +174,16 @@ class SaleDetailsBottomBar extends ConsumerWidget {
                         child: ElevatedButton.icon(
                           onPressed: () => _printReceipt(context, ref, paymentStatus),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2563EB), // Blue theme accent
+                            backgroundColor: const Color(0xFF2563EB),
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10.r),
                             ),
                           ),
-                          icon: Icon(Icons.receipt_long_outlined, size: 16.sp),
+                          icon: Icon(Icons.print_outlined, size: 16.sp),
                           label: Text(
-                            'Print / Share',
+                            'Print',
                             style: TextStyle(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.bold,

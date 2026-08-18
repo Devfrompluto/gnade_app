@@ -91,11 +91,19 @@ final filteredNotificationsProvider = Provider<AsyncValue<Map<String, List<Notif
     // 1. Filter by category
     final filtered = list.where((item) {
       if (filter == 'All') return true;
-      final itemCategory = item.category.toLowerCase();
-      final filterLower = filter.toLowerCase();
-      // "Debts" maps to "debts"
-      if (filterLower == 'debts') return itemCategory == 'debts';
-      return itemCategory == filterLower;
+      final cat = item.category.toLowerCase();
+      switch (filter) {
+        case 'Sales':
+          return cat == 'sales' || cat == 'sale' || cat == 'new_sale' || cat == 'summary' || cat == 'daily_summary';
+        case 'Stock':
+          return cat == 'stock' || cat == 'low_stock' || cat == 'out_of_stock';
+        case 'Expenses':
+          return cat == 'expenses' || cat == 'expense' || cat == 'new_expense';
+        case 'Debts':
+          return cat == 'debts' || cat == 'debt' || cat == 'debt_reminder';
+        default:
+          return cat == filter.toLowerCase();
+      }
     }).toList();
 
     // 2. Sort by timestamp (newest first)
