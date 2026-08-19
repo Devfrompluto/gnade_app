@@ -1,4 +1,5 @@
 import 'package:gnade_app/src/imports/imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import '../widgets/more_profile_summary_card.dart';
 import '../widgets/more_category_card.dart';
 import '../widgets/more_setting_tile.dart';
@@ -8,6 +9,9 @@ class MoreScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Light grey background
       body: SafeArea(
@@ -36,13 +40,14 @@ class MoreScreen extends ConsumerWidget {
                       iconBgColor: const Color(0xFFEFF6FF),
                       onTap: () => context.push(AppRoutes.appSettings),
                     ),
-                    MoreSettingTile(
-                      title: 'Business Settings',
-                      icon: HugeIcons.strokeRoundedStore01,
-                      iconColor: const Color(0xFF1E40AF),
-                      iconBgColor: const Color(0xFFEFF6FF),
-                      onTap: () => context.push(AppRoutes.businessSettings),
-                    ),
+                    if (isAdminOrOwner)
+                      MoreSettingTile(
+                        title: 'Business Settings',
+                        icon: HugeIcons.strokeRoundedStore01,
+                        iconColor: const Color(0xFF1E40AF),
+                        iconBgColor: const Color(0xFFEFF6FF),
+                        onTap: () => context.push(AppRoutes.businessSettings),
+                      ),
                     MoreSettingTile(
                       title: 'Switch Business',
                       icon: Icons.swap_horiz_rounded,
@@ -106,13 +111,14 @@ class MoreScreen extends ConsumerWidget {
                       iconBgColor: const Color(0xFFEFF6FF),
                       onTap: () => context.push(AppRoutes.team),
                     ),
-                    MoreSettingTile(
-                      title: 'Suppliers',
-                      icon: Icons.local_shipping_outlined,
-                      iconColor: const Color(0xFF1E40AF),
-                      iconBgColor: const Color(0xFFEFF6FF),
-                      onTap: () => context.push(AppRoutes.suppliers),
-                    ),
+                    if (isAdminOrOwner)
+                      MoreSettingTile(
+                        title: 'Suppliers',
+                        icon: Icons.local_shipping_outlined,
+                        iconColor: const Color(0xFF1E40AF),
+                        iconBgColor: const Color(0xFFEFF6FF),
+                        onTap: () => context.push(AppRoutes.suppliers),
+                      ),
                   ],
                 ),
               ],

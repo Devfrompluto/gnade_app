@@ -25,6 +25,16 @@ class AppUser extends Equatable {
   /// Whether the user has completed business initialization.
   bool get isInitialized => businessId != null && businessId!.isNotEmpty;
 
+  /// Whether the user is an owner or admin/manager.
+  bool get isAdminOrOwner {
+    if (role == null || role!.isEmpty) return true;
+    final r = role!.toLowerCase();
+    return r == 'owner' || r == 'manager' || r == 'admin';
+  }
+
+  /// Whether the user is a staff member.
+  bool get isStaff => !isAdminOrOwner;
+
   @override
   List<Object?> get props => [id, email, name, photoUrl, businessId, role];
 }

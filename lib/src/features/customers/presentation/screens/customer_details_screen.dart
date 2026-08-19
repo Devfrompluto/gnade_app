@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/customer_profile_header.dart';
 import '../widgets/customer_tabs_view.dart';
@@ -135,6 +136,25 @@ class CustomerDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
+
+    if (!isAdminOrOwner) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: const AppCustomAppBar(title: 'Customer Details'),
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 40.h),
+          child: const Center(
+            child: AppEmptyState(
+              title: 'Access Restricted',
+              subtitle: 'Only business owners and admins can view customer details.',
+            ),
+          ),
+        ),
+      );
+    }
+
     final customers = ref.watch(customerListProvider);
     final matches = customers.where((c) => c.id == id);
     if (matches.isEmpty) {

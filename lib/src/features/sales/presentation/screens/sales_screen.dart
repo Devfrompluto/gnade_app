@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import '../widgets/sales_metric_card.dart';
 import '../widgets/sale_card.dart';
 import '../providers/sales_providers.dart';
@@ -210,6 +211,9 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
     AsyncValue<List<Sale>> asyncSales,
     String selectedCashier,
   ) {
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
+
     int displayCount = 0;
     double displayTotal = 0;
     double displayProfit = 0;
@@ -244,38 +248,38 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
               textColor: const Color(0xFF1E40AF),
               showToggle: false,
             ),
-            SizedBox(width: 10.w),
-
-            SalesMetricCard(
-              title: 'Sales amount',
-              value: '₦ ${NumberFormat('#,##0').format(displayTotal)}',
-              bg: const Color(0xFFECFDF5),
-              border: const Color(0xFFD1FAE5),
-              textColor: const Color(0xFF065F46),
-              showToggle: true,
-              isToggled: _showSalesAmount,
-              onToggle: () {
-                setState(() {
-                  _showSalesAmount = !_showSalesAmount;
-                });
-              },
-            ),
-            SizedBox(width: 10.w),
-
-            SalesMetricCard(
-              title: 'Gross profit',
-              value: '₦ ${NumberFormat('#,##0').format(displayProfit)}',
-              bg: const Color(0xFFFAF5FF),
-              border: const Color(0xFFF3E8FF),
-              textColor: const Color(0xFF6B21A8),
-              showToggle: true,
-              isToggled: _showGrossProfit,
-              onToggle: () {
-                setState(() {
-                  _showGrossProfit = !_showGrossProfit;
-                });
-              },
-            ),
+            if (isAdminOrOwner) ...[
+              SizedBox(width: 10.w),
+              SalesMetricCard(
+                title: 'Sales amount',
+                value: '₦ ${NumberFormat('#,##0').format(displayTotal)}',
+                bg: const Color(0xFFECFDF5),
+                border: const Color(0xFFD1FAE5),
+                textColor: const Color(0xFF065F46),
+                showToggle: true,
+                isToggled: _showSalesAmount,
+                onToggle: () {
+                  setState(() {
+                    _showSalesAmount = !_showSalesAmount;
+                  });
+                },
+              ),
+              SizedBox(width: 10.w),
+              SalesMetricCard(
+                title: 'Gross profit',
+                value: '₦ ${NumberFormat('#,##0').format(displayProfit)}',
+                bg: const Color(0xFFFAF5FF),
+                border: const Color(0xFFF3E8FF),
+                textColor: const Color(0xFF6B21A8),
+                showToggle: true,
+                isToggled: _showGrossProfit,
+                onToggle: () {
+                  setState(() {
+                    _showGrossProfit = !_showGrossProfit;
+                  });
+                },
+              ),
+            ],
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:gnade_app/src/features/home/domain/entities/dashboard_data.dart';
 import 'package:gnade_app/src/features/home/presentation/providers/home_providers.dart';
 import '../widgets/home_menu_section.dart';
@@ -44,6 +45,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final currencyFormatter = NumberFormat.currency(locale: 'en_NG', symbol: '₦ ', decimalDigits: 0);
 
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Very light gray background
       appBar: const AppMainHeader(),
@@ -66,40 +70,41 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 2. METRICS CARDS SECTION (Sales & Expenses)
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        spacing: 10.w,
-                        children: [
-                          AppMetricCard(
-                            title: 'Today Sales',
-                            value: currencyFormatter.format(dashboardData.todaySales),
-                            isGreen: true,
-                            showValue: _showSalesBalance,
-                            onToggleVisibility: () {
-                              setState(() {
-                                _showSalesBalance = !_showSalesBalance;
-                              });
-                            },
-                          ),
-                          AppMetricCard(
-                            title: 'Today Expenses',
-                            value: currencyFormatter.format(dashboardData.todayExpenses),
-                            isGreen: false,
-                            showValue: _showExpensesBalance,
-                            isIncreasing: false,
-                            onToggleVisibility: () {
-                              setState(() {
-                                _showExpensesBalance = !_showExpensesBalance;
-                              });
-                            },
-                          ),
-                        ],
+                    // 2. METRICS CARDS SECTION (Sales & Expenses - Owner/Admin only)
+                    if (isAdminOrOwner) ...[
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: 10.w,
+                          children: [
+                            AppMetricCard(
+                              title: 'Today Sales',
+                              value: currencyFormatter.format(dashboardData.todaySales),
+                              isGreen: true,
+                              showValue: _showSalesBalance,
+                              onToggleVisibility: () {
+                                setState(() {
+                                  _showSalesBalance = !_showSalesBalance;
+                                });
+                              },
+                            ),
+                            AppMetricCard(
+                              title: 'Today Expenses',
+                              value: currencyFormatter.format(dashboardData.todayExpenses),
+                              isGreen: false,
+                              showValue: _showExpensesBalance,
+                              isIncreasing: false,
+                              onToggleVisibility: () {
+                                setState(() {
+                                  _showExpensesBalance = !_showExpensesBalance;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-
-                    SizedBox(height: AppSpacing.md.h),
+                      SizedBox(height: AppSpacing.md.h),
+                    ],
 
                     // 3. SEGMENTED TAB SELECTOR (Home menu / Sold products)
                     Container(

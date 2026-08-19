@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/customer_horizontal_metrics.dart';
 
@@ -111,7 +112,7 @@ class CustomersScreen extends ConsumerWidget {
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 80.h),
                       children: [
-                        ...customers.map((c) => _buildCustomerTile(context, c)),
+                        ...customers.map((c) => _buildCustomerTile(context, ref, c)),
                       ],
                     ),
             ),
@@ -153,7 +154,10 @@ class CustomersScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCustomerTile(BuildContext context, CustomerMock c) {
+  Widget _buildCustomerTile(BuildContext context, WidgetRef ref, CustomerMock c) {
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
+
     final hasDebt = c.balance < 0;
     final hasDeposit = c.balance > 0;
 
@@ -174,10 +178,17 @@ class CustomersScreen extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: ListTile(
           onTap: () {
-            context.pushNamed(
-              'customerDetails',
-              pathParameters: {'id': c.id},
-            );
+            if (isAdminOrOwner) {
+              context.pushNamed(
+                'customerDetails',
+                pathParameters: {'id': c.id},
+              );
+            } else {
+              showGlobalToast(
+                message: 'Access restricted: Only owners and admins can view customer details.',
+                status: 'warning',
+              );
+            }
           },
         contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
         leading: Container(

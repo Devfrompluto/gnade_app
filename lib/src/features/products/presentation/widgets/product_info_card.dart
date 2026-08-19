@@ -39,22 +39,22 @@ class ProductInfoCard extends StatelessWidget {
           const Divider(height: 20, color: Color(0xFFF1F5F9)),
           _buildInfoRow('Category', product.category),
           const Divider(height: 20, color: Color(0xFFF1F5F9)),
-          _buildInfoRow(
-            'Half unit price',
-            product.hasHalfUnit
-                ? '₦ ${NumberFormat('#,##0').format(product.halfUnitPrice!)}'
-                : 'Not set',
-          ),
-          const Divider(height: 20, color: Color(0xFFF1F5F9)),
-          _buildInfoRow(
-            'Retail price',
-            product.hasRetailPrice
-                ? '₦ ${NumberFormat('#,##0').format(product.retailPrice!)}'
-                : 'Not set',
-          ),
-          const Divider(height: 20, color: Color(0xFFF1F5F9)),
           _buildInfoRow('Selling Price', '₦ ${NumberFormat('#,##0').format(product.sellPrice)}'),
           if (!isStaff) ...[
+            const Divider(height: 20, color: Color(0xFFF1F5F9)),
+            _buildInfoRow(
+              'Half unit price',
+              product.hasHalfUnit
+                  ? '₦ ${NumberFormat('#,##0').format(product.halfUnitPrice!)}'
+                  : 'Not set',
+            ),
+            const Divider(height: 20, color: Color(0xFFF1F5F9)),
+            _buildInfoRow(
+              'Retail price',
+              product.hasRetailPrice
+                  ? '₦ ${NumberFormat('#,##0').format(product.retailPrice!)}'
+                  : 'Not set',
+            ),
             const Divider(height: 20, color: Color(0xFFF1F5F9)),
             _buildInfoRow('Cost Price', '₦ ${NumberFormat('#,##0').format(product.costPrice)}'),
             const Divider(height: 20, color: Color(0xFFF1F5F9)),
@@ -66,13 +66,13 @@ class ProductInfoCard extends StatelessWidget {
                   ? () => context.push('/products/supplier/${product.supplierId}')
                   : null,
             ),
+            const Divider(height: 20, color: Color(0xFFF1F5F9)),
+            _buildInfoRow('Low stock alert', '${product.lowStockAt.toStringAsFixed(0)} $unit'),
+            const Divider(height: 20, color: Color(0xFFF1F5F9)),
+            _buildInfoRow('Added', DateFormat('dd MMM yyyy').format(product.createdAt)),
+            const Divider(height: 20, color: Color(0xFFF1F5F9)),
+            _buildInfoRow('Last updated', DateFormat('dd MMM yyyy').format(product.displayUpdatedAt)),
           ],
-          const Divider(height: 20, color: Color(0xFFF1F5F9)),
-          _buildInfoRow('Low stock alert', '${product.lowStockAt.toStringAsFixed(0)} $unit'),
-          const Divider(height: 20, color: Color(0xFFF1F5F9)),
-          _buildInfoRow('Added', DateFormat('dd MMM yyyy').format(product.createdAt)),
-          const Divider(height: 20, color: Color(0xFFF1F5F9)),
-          _buildInfoRow('Last updated', DateFormat('dd MMM yyyy').format(product.displayUpdatedAt)),
         ],
       ),
     );

@@ -205,6 +205,36 @@ class BusinessSettingsScreen extends ConsumerWidget {
       }
     }
 
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
+
+    if (!isAdminOrOwner) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppTopBar(
+          title: 'Settings',
+          centerTitle: true,
+          titleWidget: Text(
+            'Settings',
+            style: TextStyle(
+              color: const Color(0xFF1E3A8A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18.sp,
+            ),
+          ),
+        ),
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 40.h),
+          child: const Center(
+            child: AppEmptyState(
+              title: 'Access Restricted',
+              subtitle: 'Only business owners and admins can view business settings.',
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Light grey background
       appBar: AppTopBar(

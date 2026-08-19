@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:gnade_app/src/features/products/presentation/widgets/products_filter_pills.dart';
 import 'package:gnade_app/src/features/products/presentation/widgets/products_summary_cards.dart';
 import 'package:gnade_app/src/features/products/presentation/widgets/products_categories_list.dart';
@@ -40,6 +41,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
                 p.sku.toLowerCase().contains(_searchQuery.toLowerCase()))
             .toList();
+
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -164,8 +168,10 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                   children: [
                     const ProductsFilterPills(),
                     SizedBox(height: 24.h),
-                    const ProductsSummaryCards(),
-                    SizedBox(height: 24.h),
+                    if (isAdminOrOwner) ...[
+                      const ProductsSummaryCards(),
+                      SizedBox(height: 24.h),
+                    ],
                     const ProductsCategoriesList(),
                     SizedBox(height: 24.h),
 
@@ -252,7 +258,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               ),
             ),
           ),
-          const ProductsBottomActions(),
+          if (isAdminOrOwner) const ProductsBottomActions(),
         ],
       ),
     );

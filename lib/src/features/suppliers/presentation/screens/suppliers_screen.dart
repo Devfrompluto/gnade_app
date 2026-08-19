@@ -1,5 +1,6 @@
 import 'package:gnade_app/src/imports/core_imports.dart';
 import 'package:gnade_app/src/imports/packages_imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 import '../providers/suppliers_providers.dart';
 import '../../domain/entities/supplier.dart';
 import '../widgets/supplier_card.dart';
@@ -42,6 +43,9 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
     final theme = context.theme;
     final textTheme = theme.textTheme;
 
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
+
     final suppliersAsync = ref.watch(suppliersProvider);
     final searchQuery = ref.watch(supplierSearchQueryProvider);
     final hasSuppliers = (suppliersAsync.value ?? []).isNotEmpty;
@@ -52,7 +56,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
         title: 'Suppliers',
         onBackPressed: () => context.pop(),
       ),
-      floatingActionButton: hasSuppliers
+      floatingActionButton: (hasSuppliers && isAdminOrOwner)
           ? FloatingActionButton(
               onPressed: () => context.push(AppRoutes.addSupplier),
               backgroundColor: const Color(0xFF1E40AF),
@@ -61,7 +65,17 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
             )
           : null,
       body: SafeArea(
-        child: RefreshIndicator(
+        child: !isAdminOrOwner
+            ? Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 40.h),
+                child: const Center(
+                  child: AppEmptyState(
+                    title: 'Access Restricted',
+                    subtitle: 'Only business owners and admins can view suppliers.',
+                  ),
+                ),
+              )
+            : RefreshIndicator(
           onRefresh: _handleRefresh,
           color: const Color(0xFF1E40AF),
           child: SingleChildScrollView(

@@ -90,6 +90,9 @@ class SaleDetailsBottomBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(sessionProvider).user;
+    final bool canRefundOrAccept = user?.isAdminOrOwner ?? true;
+
     final rawStatus = sale.status.toLowerCase();
     final bool isPaid = rawStatus == 'paid';
     final bool isRefunded = rawStatus == 'refunded';
@@ -98,6 +101,46 @@ class SaleDetailsBottomBar extends ConsumerWidget {
     final String paymentStatus = isPaid
         ? 'Paid'
         : (isRefunded ? 'Refunded' : 'Partial');
+
+    // If staff user, only show Print button
+    if (!canRefundOrAccept) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: const Border(
+            top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 48.h,
+          child: ElevatedButton.icon(
+            onPressed: () => _printReceipt(context, ref, paymentStatus),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+            ),
+            icon: Icon(Icons.print_outlined, size: 18.sp),
+            label: Text(
+              'Print Receipt',
+              style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),

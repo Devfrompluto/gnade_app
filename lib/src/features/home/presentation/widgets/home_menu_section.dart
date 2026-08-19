@@ -1,12 +1,15 @@
 import 'package:gnade_app/src/imports/imports.dart';
+import 'package:gnade_app/src/features/auth/presentation/providers/session_provider.dart';
 
-class HomeMenuSection extends StatelessWidget {
+class HomeMenuSection extends ConsumerWidget {
   const HomeMenuSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = context.theme.textTheme;
     final colorScheme = context.theme.colorScheme;
+    final user = ref.watch(sessionProvider).user;
+    final isAdminOrOwner = user?.isAdminOrOwner ?? true;
 
     return Column(
       key: const ValueKey('home_menu_view'),
@@ -88,7 +91,16 @@ class HomeMenuSection extends StatelessWidget {
               label: 'Suppliers',
               iconColor: const Color(0xFF1E3A8A),
               badgeColor: const Color(0xFFDBEAFE),
-              onTap: () => context.push(AppRoutes.suppliers),
+              onTap: () {
+                if (isAdminOrOwner) {
+                  context.push(AppRoutes.suppliers);
+                } else {
+                  showGlobalToast(
+                    message: 'Access restricted: Only owners and admins can view suppliers.',
+                    status: 'warning',
+                  );
+                }
+              },
             ),
           ],
         ),
