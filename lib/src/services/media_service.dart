@@ -94,16 +94,24 @@ class MediaService {
         }
       }
 
-      final FilePickerResult? result = await FilePicker.pickFiles(
-        type: type,
-        allowedExtensions: allowedExtensions,
-      );
+      final List<PlatformFile> files;
+      if (allowMultiple) {
+        files = await FilePicker.pickFiles(
+          type: type,
+          allowedExtensions: allowedExtensions,
+        );
+      } else {
+        final file = await FilePicker.pickFile(
+          type: type,
+          allowedExtensions: allowedExtensions,
+        );
+        files = file == null ? [] : [file];
+      }
 
-      if (result == null || result.files.isEmpty) return [];
-
-      return result.paths
-          .where((path) => path != null)
-          .map((path) => File(path!))
+      return files
+          .map((file) => file.path)
+          .whereType<String>()
+          .map(File.new)
           .toList();
     });
   }

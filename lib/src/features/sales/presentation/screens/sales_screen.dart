@@ -495,7 +495,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> with SingleTickerProv
               flex: 4,
               child: GestureDetector(
                 onTap: () {
-                  context.push(AppRoutes.dashboard);
+                  showGlobalToast(message: 'Sales statistics coming soon!');
                 },
                 child: Container(
                   height: 44.h,

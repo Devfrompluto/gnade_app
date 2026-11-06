@@ -17,7 +17,8 @@ export 'package:shared_preferences/shared_preferences.dart';
 export 'package:flutter_secure_storage/flutter_secure_storage.dart';
 export 'package:logger/logger.dart';
 export 'package:image_picker/image_picker.dart';
-export 'package:file_picker/file_picker.dart';
+export 'package:file_picker/file_picker.dart'
+    show FilePicker, FileType, PlatformFile;
 export 'package:path_provider/path_provider.dart';
 export 'package:url_launcher/url_launcher.dart';
 export 'package:share_plus/share_plus.dart';

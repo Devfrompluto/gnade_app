@@ -534,3 +534,83 @@ final suppliersListProvider = StateNotifierProvider<SuppliersListNotifier, List<
   return SuppliersListNotifier(ref);
 });
 
+class ProductSalesMetrics {
+  final double unitsSold;
+  final double revenue;
+  final int salesCount;
+  final DateTime? lastSoldAt;
+
+  const ProductSalesMetrics({
+    required this.unitsSold,
+    required this.revenue,
+    required this.salesCount,
+    this.lastSoldAt,
+  });
+}
+
+final productSalesMetricsProvider = FutureProvider.family<ProductSalesMetrics, Product>((ref, product) async {
+  final session = ref.watch(sessionProvider);
+  final businessId = session.user?.businessId;
+  if (businessId == null || businessId.isEmpty) {
+    return const ProductSalesMetrics(unitsSold: 0, revenue: 0, salesCount: 0);
+  }
+
+  final now = DateTime.now();
+  final thirtyDaysAgo = now.subtract(const Duration(days: 30)).toIso8601String();
+
+  try {
+    final response = List<Map<String, dynamic>>.from(
+      await Supabase.instance.client
+          .from('sale_items')
+          .select('quantity, total, product_id, product_name, sales!inner(created_at, business_id, status)')
+          .eq('sales.business_id', businessId)
+          .gte('sales.created_at', thirtyDaysAgo),
+    );
+
+    double unitsSold = 0;
+    double revenue = 0;
+    int salesCount = 0;
+    DateTime? lastSoldAt;
+
+    for (final item in response) {
+      final pId = item['product_id']?.toString();
+      final pName = item['product_name']?.toString().toLowerCase();
+      final matchesProduct = (pId != null && pId.isNotEmpty && pId == product.id) ||
+          (pName != null && pName == product.name.trim().toLowerCase());
+
+      if (matchesProduct) {
+        final salesMap = item['sales'] as Map<String, dynamic>?;
+        final status = salesMap?['status']?.toString().toLowerCase();
+        if (status == 'refunded') continue;
+
+        final qty = double.tryParse(item['quantity']?.toString() ?? '0') ?? 0.0;
+        final tot = double.tryParse(item['total']?.toString() ?? '0') ?? 0.0;
+
+        unitsSold += qty;
+        revenue += tot;
+        salesCount++;
+
+        final createdAtStr = salesMap?['created_at']?.toString();
+        if (createdAtStr != null) {
+          final dt = DateTime.tryParse(createdAtStr);
+          if (dt != null) {
+            if (lastSoldAt == null || dt.isAfter(lastSoldAt)) {
+              lastSoldAt = dt;
+            }
+          }
+        }
+      }
+    }
+
+    return ProductSalesMetrics(
+      unitsSold: unitsSold,
+      revenue: revenue,
+      salesCount: salesCount,
+      lastSoldAt: lastSoldAt,
+    );
+  } catch (e) {
+    AppLogger.error('Failed to compute product sales metrics: $e');
+    return const ProductSalesMetrics(unitsSold: 0, revenue: 0, salesCount: 0);
+  }
+});
+
